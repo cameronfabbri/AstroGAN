@@ -14,7 +14,7 @@ import time
 import sys
 import os
 
-sys.path.insert(0, '../ops/')
+#sys.path.insert(0, '../ops/')
 
 from tf_ops import *
 import data_ops
@@ -23,24 +23,26 @@ from nets import *
 if __name__ == '__main__':
 
    parser = argparse.ArgumentParser()
-   parser.add_argument('--LOSS',       required=False,help='Type of GAN loss to use', type=str,default='wgan')
-   parser.add_argument('--EPOCHS',     required=False,help='Maximum training steps',  type=int,default=100000)
-   parser.add_argument('--DATASET',    required=False,help='The DATASET to use',      type=str,default='zoo')
-   parser.add_argument('--DATA_DIR',   required=False,help='Directory where data is', type=str,default='./')
-   parser.add_argument('--BATCH_SIZE', required=False,help='Batch size',              type=int,default=64)
+   parser.add_argument('--LOSS',       required=False,help='Type of GAN loss to use',  type=str,default='wgan')
+   parser.add_argument('--SIZE',       required=False,help='Size of the images',       type=int,default=64)
+   parser.add_argument('--EPOCHS',     required=False,help='Maximum number of epochs', type=int,default=100)
+   parser.add_argument('--DATASET',    required=False,help='The dataset to use',       type=str,default='zoo')
+   parser.add_argument('--DATA_DIR',   required=False,help='Directory where data is',  type=str,default='./')
+   parser.add_argument('--BATCH_SIZE', required=False,help='Batch size',               type=int,default=64)
    a = parser.parse_args()
 
    LOSS           = a.LOSS
+   SIZE           = a.SIZE
    EPOCHS         = a.EPOCHS
    DATASET        = a.DATASET
    DATA_DIR       = a.DATA_DIR
    BATCH_SIZE     = a.BATCH_SIZE
 
-   CHECKPOINT_DIR = 'checkpoints/gan/DATASET_'+DATASET+'/LOSS_'+LOSS+'/'
+   CHECKPOINT_DIR = 'checkpoints/gan/DATASET_'+DATASET+'/LOSS_'+LOSS+'/SIZE_'+str(SIZE)+'/'
    IMAGES_DIR     = CHECKPOINT_DIR+'images/'
 
    print 'Loading data...'
-   train_images, train_annots, train_ids, test_images, test_annots, test_ids = data_ops.load_zoo(DATA_DIR)
+   train_images, train_annots, train_ids, test_images, test_annots, test_ids = data_ops.load_zoo(DATA_DIR, SIZE)
    print train_images.shape
    print train_annots.shape
    print test_images.shape
@@ -50,9 +52,9 @@ if __name__ == '__main__':
    try: os.makedirs(IMAGES_DIR)
    except: pass
 
-   # placeholders for data going into the network
    global_step = tf.Variable(0, name='global_step', trainable=False)
-   real_images = tf.placeholder(tf.float32, shape=(BATCH_SIZE, 64, 64, 3), name='real_images')
+   # placeholders for data going into the network
+   real_images = tf.placeholder(tf.float32, shape=(BATCH_SIZE, SIZE, SIZE, 3), name='real_images')
    z           = tf.placeholder(tf.float32, shape=(BATCH_SIZE, 100), name='z')
    y           = tf.placeholder(tf.float32, shape=(BATCH_SIZE, 37), name='y')
 
@@ -218,7 +220,7 @@ if __name__ == '__main__':
             img = (img+1.)
             img *= 127.5
             img = np.clip(img, 0, 255).astype(np.uint8)
-            img = np.reshape(img, (64, 64, -1))
+            img = np.reshape(img, (SIZE, SIZE, -1))
             misc.imsave(IMAGES_DIR+'step_'+str(step)+'_'+str(batch_ids[num])+'.png', img)
             with open(IMAGES_DIR+'attrs.txt', 'a') as f:
                f.write('step_'+str(step)+'_'+str(batch_ids[num])+','+str(atr)+'\n')
