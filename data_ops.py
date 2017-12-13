@@ -87,7 +87,7 @@ def load_galaxy(data_dir):
 '''
    Galaxy zoo dataset. Just going to load it all in memory
 '''
-def load_zoo(data_dir):
+def load_zoo(data_dir, size):
 
    train_images = sorted(glob.glob(data_dir+'images_training_rev1/train/*.jpg'))
    train_ids    = [ntpath.basename(x.split('.')[0]) for x in train_images]
@@ -117,7 +117,7 @@ def load_zoo(data_dir):
          line = np.asarray(line.split(',')).astype('float32')
          im_id = int(line[0])
          img = misc.imread(id_dict[im_id]).astype('float32')
-         img = misc.imresize(img, (64,64))
+         img = misc.imresize(img, (size,size))
          img = normalize(img)
          att = line[1:]
 
