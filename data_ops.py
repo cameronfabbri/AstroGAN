@@ -138,4 +138,5 @@ def normalize(image):
 
 def unnormalize(image):
    img = (img+1.)
-   return img *= 127.5
+   img *= 127.5
+   return img
