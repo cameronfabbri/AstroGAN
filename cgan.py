@@ -24,23 +24,19 @@ if __name__ == '__main__':
 
    parser = argparse.ArgumentParser()
    parser.add_argument('--LOSS',       required=False,help='Type of GAN loss to use', type=str,default='wgan')
+   parser.add_argument('--EPOCHS',     required=False,help='Maximum training steps',  type=int,default=100000)
    parser.add_argument('--DATASET',    required=False,help='The DATASET to use',      type=str,default='zoo')
    parser.add_argument('--DATA_DIR',   required=False,help='Directory where data is', type=str,default='./')
-   parser.add_argument('--EPOCHS',     required=False,help='Maximum training steps',  type=int,default=100000)
    parser.add_argument('--BATCH_SIZE', required=False,help='Batch size',              type=int,default=64)
-   parser.add_argument('--DIST',       required=False,help='Distribution to use',     type=str,default='normal')
-   parser.add_argument('--MATCH',      required=False,help='Match discriminator',     type=int,default=0)
    a = parser.parse_args()
 
    LOSS           = a.LOSS
-   DIST           = a.DIST
-   MATCH          = bool(a.MATCH)
    EPOCHS         = a.EPOCHS
    DATASET        = a.DATASET
    DATA_DIR       = a.DATA_DIR
    BATCH_SIZE     = a.BATCH_SIZE
 
-   CHECKPOINT_DIR = 'checkpoints/gan/DATASET_'+DATASET+'/LOSS_'+LOSS+'/DIST_'+str(DIST)+'/MATCH_'+str(MATCH)+'/'
+   CHECKPOINT_DIR = 'checkpoints/gan/DATASET_'+DATASET+'/LOSS_'+LOSS+'/'
    IMAGES_DIR     = CHECKPOINT_DIR+'images/'
 
    print 'Loading data...'
