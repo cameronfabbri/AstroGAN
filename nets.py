@@ -39,7 +39,8 @@ def netG(z, y, BATCH_SIZE):
    tf.add_to_collection('vars', conv2)
    tf.add_to_collection('vars', conv3)
    tf.add_to_collection('vars', conv4)
-   return conv4
+   tf.add_to_collection('vars', conv5)
+   return conv5
 
 '''
    Discriminator network. No batch norm when using WGAN
@@ -54,6 +55,7 @@ def netD(input_images, y, BATCH_SIZE, LOSS, reuse=False):
 
       # reshape so it's batchx1x1xy_size
       y = tf.reshape(y, shape=[BATCH_SIZE, 1, 1, y_dim])
+      print 'input_images:',input_images
       input_ = conv_cond_concat(input_images, y)
 
       conv1 = tcl.conv2d(input_, 64, 5, 2, activation_fn=tf.identity, weights_initializer=tf.random_normal_initializer(stddev=0.02), scope='d_conv1')

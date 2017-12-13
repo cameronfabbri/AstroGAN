@@ -130,7 +130,7 @@ def load_zoo(data_dir, size):
             test_attributes.append(att)
 
          d += 1
-         if d == 65: break
+         #if d == 65: break
 
    return np.asarray(train_images), np.asarray(train_attributes), np.asarray(test_images), np.asarray(test_attributes), np.asarray(train_ids), np.asarray(test_ids)
 

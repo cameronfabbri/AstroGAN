@@ -63,6 +63,7 @@ if __name__ == '__main__':
 
    # get the output from D on the real and fake data
    errD_real = netD(real_images, y, BATCH_SIZE, LOSS)
+   print 'y:',y
    errD_fake = netD(gen_images, y, BATCH_SIZE, LOSS, reuse=True)
 
    # Important! no initial activations done on the last layer for D, so if one method needs an activation, do it
@@ -175,11 +176,7 @@ if __name__ == '__main__':
          batch_y      = train_annots[idx]
          batch_images = train_images[idx]
 
-         if MATCH == True:
-            batch_fy = 1-batch_y
-            sess.run(D_train_op, feed_dict={z:batch_z, y:batch_y, fy:batch_fy, real_images:batch_images})
-         else:
-            sess.run(D_train_op, feed_dict={z:batch_z, y:batch_y, real_images:batch_images})
+         sess.run(D_train_op, feed_dict={z:batch_z, y:batch_y, real_images:batch_images})
       
       # now train the generator once! use normal distribution, not uniform!!
       idx          = np.random.choice(np.arange(train_len), BATCH_SIZE, replace=False)
@@ -187,23 +184,17 @@ if __name__ == '__main__':
       batch_y      = train_annots[idx]
       batch_images = train_images[idx]
 
-      if MATCH == True:
-         batch_fy = 1-batch_y
-         sess.run(G_train_op, feed_dict={z:batch_z, y:batch_y, fy:batch_fy, real_images:batch_images})
-         D_loss, G_loss, summary = sess.run([errD, errG, merged_summary_op],
-                                 feed_dict={z:batch_z, y:batch_y, fy: batch_fy, real_images:batch_images})
-      else:
-         # now get all losses and summary *without* performing a training step - for tensorboard and printing
-         sess.run(G_train_op, feed_dict={z:batch_z, y:batch_y, real_images:batch_images})
-         D_loss, G_loss, summary = sess.run([errD, errG, merged_summary_op],
-                                 feed_dict={z:batch_z, y:batch_y, real_images:batch_images})
+      # now get all losses and summary *without* performing a training step - for tensorboard and printing
+      sess.run(G_train_op, feed_dict={z:batch_z, y:batch_y, real_images:batch_images})
+      D_loss, G_loss, summary = sess.run([errD, errG, merged_summary_op],
+                              feed_dict={z:batch_z, y:batch_y, real_images:batch_images})
 
       summary_writer.add_summary(summary, step)
 
       print 'epoch:',epoch_num,'step:',step,'D loss:',D_loss,'G_loss:',G_loss,'time:',time.time()-start
       step += 1
     
-      if step%500 == 0:
+      if step%5 == 0:
          print 'Saving model...'
          saver.save(sess, CHECKPOINT_DIR+'checkpoint-'+str(step))
          saver.export_meta_graph(CHECKPOINT_DIR+'checkpoint-'+str(step)+'.meta')
