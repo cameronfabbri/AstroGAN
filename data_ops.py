@@ -16,7 +16,6 @@ import requests
 import gzip
 import cPickle as pickle
 import gzip
-import mnist_reader
 
 '''
 
