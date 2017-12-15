@@ -36,7 +36,7 @@ import gzip
    49 Multiplicity    - Abundance of neighbouring galaxies
 
 '''
-def load_galaxy(data_dir, size):
+def load_efigi(data_dir, size):
 
    #idx = np.array([0, 1, 7, 10, 13, 16, 19, 22, 25, 28, 31, 34, 40, 49])
    idx = np.array([7, 10, 31, 49])
