@@ -44,14 +44,6 @@ if __name__ == '__main__':
    CHECKPOINT_DIR = 'checkpoints/gan/DATASET_'+DATASET+'/GAN_'+GAN+'/SIZE_'+str(SIZE)+'/BETA1_'+str(BETA1)+'/'
    IMAGES_DIR     = CHECKPOINT_DIR+'images/'
 
-   print 'Loading data...'
-   train_images, train_annots, train_ids, test_images, test_annots, test_ids = data_ops.load_zoo(DATA_DIR, SIZE)
-   print train_images.shape
-   print train_annots.shape
-   print test_images.shape
-   print test_annots.shape
-   print 'Done'
-
    try: os.makedirs(IMAGES_DIR)
    except: pass
 
@@ -162,6 +154,14 @@ if __name__ == '__main__':
    ########################################### training portion
 
    step = sess.run(global_step)
+   
+   print 'Loading data...'
+   train_images, train_annots, train_ids, test_images, test_annots, test_ids = data_ops.load_zoo(DATA_DIR, SIZE)
+   print train_images.shape
+   print train_annots.shape
+   print test_images.shape
+   print test_annots.shape
+   print 'Done'
 
    train_len = len(train_annots)
    test_len  = len(test_annots)
