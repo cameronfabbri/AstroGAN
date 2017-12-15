@@ -41,7 +41,7 @@ if __name__ == '__main__':
    DATA_DIR       = a.DATA_DIR
    BATCH_SIZE     = a.BATCH_SIZE
 
-   CHECKPOINT_DIR = 'checkpoints/gan/DATASET_'+DATASET+'/GAN_'+GAN+'/SIZE_'+str(SIZE)+'/'
+   CHECKPOINT_DIR = 'checkpoints/gan/DATASET_'+DATASET+'/GAN_'+GAN+'/SIZE_'+str(SIZE)+'/BETA1_'+str(BETA1)+'/'
    IMAGES_DIR     = CHECKPOINT_DIR+'images/'
 
    print 'Loading data...'
