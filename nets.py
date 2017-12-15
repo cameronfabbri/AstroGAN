@@ -81,7 +81,6 @@ def netD(input_images, y, BATCH_SIZE, GAN, SIZE, reuse=False):
       conv = tcl.conv2d(conv, 1, 4, 1, activation_fn=tf.identity, weights_initializer=tf.random_normal_initializer(stddev=0.02), scope='d_conv6')
       print 'conv6:',conv
 
-      print 'input images:',input_images
       print 'END D\n'
       return conv
 
