@@ -22,23 +22,26 @@ from nets import *
 
 if __name__ == '__main__':
 
+   # params
    parser = argparse.ArgumentParser()
-   parser.add_argument('--LOSS',       required=False,help='Type of GAN loss to use',  type=str,default='wgan')
-   parser.add_argument('--SIZE',       required=False,help='Size of the images',       type=int,default=64)
-   parser.add_argument('--EPOCHS',     required=False,help='Maximum number of epochs', type=int,default=100)
-   parser.add_argument('--DATASET',    required=False,help='The dataset to use',       type=str,default='zoo')
-   parser.add_argument('--DATA_DIR',   required=False,help='Directory where data is',  type=str,default='./')
-   parser.add_argument('--BATCH_SIZE', required=False,help='Batch size',               type=int,default=64)
+   parser.add_argument('--GAN',        required=False,help='Type of GAN loss to use',  type=str,  default='wgan')
+   parser.add_argument('--SIZE',       required=False,help='Size of the images',       type=int,  default=64)
+   parser.add_argument('--BETA1',      required=False,help='beta1 ADAM parameter',     type=float,default=0.0) # wgan only
+   parser.add_argument('--EPOCHS',     required=False,help='Maximum number of epochs', type=int,  default=100)
+   parser.add_argument('--DATASET',    required=False,help='The dataset to use',       type=str,  default='zoo')
+   parser.add_argument('--DATA_DIR',   required=True, help='Directory where data is',  type=str,  default='./')
+   parser.add_argument('--BATCH_SIZE', required=False,help='Batch size',               type=int,  default=64)
    a = parser.parse_args()
 
-   LOSS           = a.LOSS
+   GAN            = a.GAN
    SIZE           = a.SIZE
+   BETA1          = a.BETA1
    EPOCHS         = a.EPOCHS
    DATASET        = a.DATASET
    DATA_DIR       = a.DATA_DIR
    BATCH_SIZE     = a.BATCH_SIZE
 
-   CHECKPOINT_DIR = 'checkpoints/gan/DATASET_'+DATASET+'/LOSS_'+LOSS+'/SIZE_'+str(SIZE)+'/'
+   CHECKPOINT_DIR = 'checkpoints/gan/DATASET_'+DATASET+'/GAN_'+GAN+'/SIZE_'+str(SIZE)+'/'
    IMAGES_DIR     = CHECKPOINT_DIR+'images/'
 
    print 'Loading data...'
@@ -59,28 +62,40 @@ if __name__ == '__main__':
    y           = tf.placeholder(tf.float32, shape=(BATCH_SIZE, 37), name='y')
 
    # generated images
-   gen_images = netG(z, y, BATCH_SIZE)
+   gen_images = netG(z, y, BATCH_SIZE, SIZE)
 
    # get the output from D on the real and fake data
-   errD_real = netD(real_images, y, BATCH_SIZE, LOSS)
+   errD_real = netD(real_images, y, BATCH_SIZE, GAN, SIZE)
    print 'y:',y
-   errD_fake = netD(gen_images, y, BATCH_SIZE, LOSS, reuse=True)
+   errD_fake = netD(gen_images, y, BATCH_SIZE, GAN, SIZE, reuse=True)
 
    # Important! no initial activations done on the last layer for D, so if one method needs an activation, do it
    e = 1e-12
-   if LOSS == 'gan':
+   if GAN == 'gan':
       errD_real = tf.nn.sigmoid(errD_real)
       errD_fake = tf.nn.sigmoid(errD_fake)
       errG = tf.reduce_mean(-tf.log(errD_fake + e))
       errD = tf.reduce_mean(-(tf.log(errD_real+e)+tf.log(1-errD_fake+e)))
+      
+      # training details
+      n_critic = 1
+      beta1    = 0.5
+      beta2    = 0.999
+      lr       = 0.0002
 
-   if LOSS == 'lsgan':
+   if GAN == 'lsgan':
       errD_real = tf.nn.sigmoid(errD_real)
       errD_fake = tf.nn.sigmoid(errD_fake)
       errD = tf.reduce_mean(0.5*(tf.square(errD_real - 1)) + 0.5*(tf.square(errD_fake)))
       errG = tf.reduce_mean(0.5*(tf.square(errD_fake - 1)))
+      
+      # training details
+      n_critic = 1
+      beta1    = 0.5
+      beta2    = 0.999
+      lr       = 0.001
 
-   if LOSS == 'wgan':
+   if GAN == 'wgan':
       # cost functions
       errD = tf.reduce_mean(errD_real) - tf.reduce_mean(errD_fake)
       errG = tf.reduce_mean(errD_fake)
@@ -88,11 +103,17 @@ if __name__ == '__main__':
       # gradient penalty
       epsilon = tf.random_uniform([], 0.0, 1.0)
       x_hat = real_images*epsilon + (1-epsilon)*gen_images
-      d_hat = netD(x_hat, y, BATCH_SIZE, LOSS, reuse=True)
+      d_hat = netD(x_hat, y, BATCH_SIZE, GAN, reuse=True)
       gradients = tf.gradients(d_hat, x_hat)[0]
       slopes = tf.sqrt(tf.reduce_sum(tf.square(gradients), reduction_indices=[1]))
       gradient_penalty = 10*tf.reduce_mean((slopes-1.0)**2)
       errD += gradient_penalty
+      
+      # training details
+      n_critic = 5
+      beta1    = BETA1
+      beta2    = 0.9
+      lr       = 1e-4
 
    # tensorboard summaries
    tf.summary.scalar('d_loss', errD)
@@ -104,23 +125,7 @@ if __name__ == '__main__':
    d_vars = [var for var in t_vars if 'd_' in var.name]
    g_vars = [var for var in t_vars if 'g_' in var.name]
 
-   if LOSS == 'wgan':
-      n_critic = 5
-      beta1    = 0.0
-      beta2    = 0.9
-      lr       = 1e-4
 
-   if LOSS == 'lsgan':
-      n_critic = 1
-      beta1    = 0.5
-      beta2    = 0.999
-      lr       = 0.001
-
-   if LOSS == 'gan':
-      n_critic = 1
-      beta1    = 0.5
-      beta2    = 0.999
-      lr       = 0.0002
 
    # optimize G
    G_train_op = tf.train.AdamOptimizer(learning_rate=lr,beta1=beta1,beta2=beta2).minimize(errG, var_list=g_vars, global_step=global_step)
