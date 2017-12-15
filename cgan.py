@@ -51,7 +51,11 @@ if __name__ == '__main__':
    # placeholders for data going into the network
    real_images = tf.placeholder(tf.float32, shape=(BATCH_SIZE, SIZE, SIZE, 3), name='real_images')
    z           = tf.placeholder(tf.float32, shape=(BATCH_SIZE, 100), name='z')
-   y           = tf.placeholder(tf.float32, shape=(BATCH_SIZE, 37), name='y')
+
+   # number of attributes
+   if DATASET == 'zoo':   y_dim = 37
+   if DATASET == 'efigi': y_dim = 4
+   y           = tf.placeholder(tf.float32, shape=(BATCH_SIZE, y_dim), name='y')
 
    # generated images
    gen_images = netG(z, y, BATCH_SIZE, SIZE)
