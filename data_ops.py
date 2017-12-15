@@ -36,7 +36,7 @@ import gzip
    49 Multiplicity    - Abundance of neighbouring galaxies
 
 '''
-def load_galaxy(data_dir):
+def load_galaxy(data_dir, size):
 
    #idx = np.array([0, 1, 7, 10, 13, 16, 19, 22, 25, 28, 31, 34, 40, 49])
    idx = np.array([7, 10, 31, 49])
@@ -65,24 +65,19 @@ def load_galaxy(data_dir):
          line     = line[idx].astype('float32')
          if image_id in train_ids:
             img = misc.imread(iptr+image_id+'.png').astype('float32')
-            img = misc.imresize(img, (64, 64))
+            img = misc.imresize(img, (size, size))
             img = normalize(img)
             train_images.append(img)
             train_attributes.append(line)
          elif image_id in test_ids:
             paths.append(ipte+image_id+'.png')
             img = misc.imread(ipte+image_id+'.png').astype('float32')
-            img = misc.imresize(img, (64, 64))
+            img = misc.imresize(img, (size, size))
             img = normalize(img)
             test_images.append(img)
             test_attributes.append(line)
 
-   train_images = np.asarray(train_images)
-   test_images = np.asarray(test_images)
-   train_attributes = np.asarray(train_attributes)
-   test_attributes = np.asarray(test_attributes)
-
-   return train_images, train_attributes, test_images, test_attributes, paths
+   return np.asarray(train_images), np.asarray(train_attributes), np.asarray(train_ids), np.asarray(test_images), np.asarray(test_attributes), np.asarray(test_ids)
 
 '''
    Galaxy zoo dataset. Just going to load it all in memory
