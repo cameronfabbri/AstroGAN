@@ -95,7 +95,7 @@ if __name__ == '__main__':
       # gradient penalty
       epsilon = tf.random_uniform([], 0.0, 1.0)
       x_hat = real_images*epsilon + (1-epsilon)*gen_images
-      d_hat = netD(x_hat, y, BATCH_SIZE, GAN, reuse=True)
+      d_hat = netD(x_hat, y, BATCH_SIZE, GAN, SIZE, reuse=True)
       gradients = tf.gradients(d_hat, x_hat)[0]
       slopes = tf.sqrt(tf.reduce_sum(tf.square(gradients), reduction_indices=[1]))
       gradient_penalty = 10*tf.reduce_mean((slopes-1.0)**2)
