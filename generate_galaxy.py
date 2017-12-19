@@ -33,6 +33,7 @@ if __name__ == '__main__':
    parser.add_argument('--DATASET',        required=False,help='The DATASET to use',      type=str,default='galaxy')
    parser.add_argument('--OUTPUT_DIR',     required=False,help='Directory to save data', type=str,default='./')
    parser.add_argument('--MAX_GEN',        required=False,help='Maximum images to generate',  type=int,default=5)
+   parser.add_argument('--SIZE',           required=False,help='Size of images', type=int,default=64)
    parser.add_argument('--DATA_DIR',       required=True,help='Data directory',type=str)
    a = parser.parse_args()
 
@@ -41,6 +42,7 @@ if __name__ == '__main__':
    OUTPUT_DIR     = a.OUTPUT_DIR
    MAX_GEN        = a.MAX_GEN
    DATA_DIR       = a.DATA_DIR
+   SIZE           = a.SIZE
 
    BATCH_SIZE = 64
 
@@ -49,11 +51,12 @@ if __name__ == '__main__':
 
    # placeholders for data going into the network
    z           = tf.placeholder(tf.float32, shape=(BATCH_SIZE, 100), name='z')
-   y           = tf.placeholder(tf.float32, shape=(BATCH_SIZE, 14), name='y')
+   if DATASET == 'zoo': y_dim = 37
+   if DATASET == 'efigi': y_dim = 4
+   y           = tf.placeholder(tf.float32, shape=(BATCH_SIZE, y_dim), name='y')
 
    # generated images
-   gen_images = netG(z, y, BATCH_SIZE)
-   D_score = netD(gen_images, y, BATCH_SIZE, 'wgan')
+   gen_images = netG(z, y, BATCH_SIZE, SIZE)
    
    saver = tf.train.Saver(max_to_keep=1)
    init = tf.group(tf.global_variables_initializer(), tf.local_variables_initializer())
@@ -73,17 +76,18 @@ if __name__ == '__main__':
          exit()
 
    print 'Loading data...'
-   images, annots, test_images, test_annots, _ = data_ops.load_galaxy(DATA_DIR)
+   if DATASET == 'zoo': train_images, train_annots, train_ids, test_images, test_annots, test_ids = data_ops.load_zoo(DATA_DIR, SIZE)
+   if DATASET == 'efigi': train_images, train_annots, train_ids, test_images, test_annots, test_ids = data_ops.load_efigi(DATA_DIR, SIZE)
    test_len = len(test_annots)
 
    print 'generating data...'
-   batch_z = np.random.normal(0, 1.0, size=[BATCH_SIZE, 100]).astype(np.float32)
+   batch_z = np.random.normal(-1.0, 1.0, size=[BATCH_SIZE, 100]).astype(np.float32)
    idx     = np.random.choice(np.arange(test_len), BATCH_SIZE, replace=False)
    batch_y = test_annots[idx]
 
    gen_imgs = sess.run([gen_images], feed_dict={z:batch_z, y:batch_y})[0]
 
-   canvas = 255*np.ones((80, 680, 3), dtype=np.uint8)
+   canvas = 255*np.ones((80, 80, 3), dtype=np.uint8)
    start_x = 10
    start_y = 10
    end_y = start_y+64
@@ -98,7 +102,7 @@ if __name__ == '__main__':
       break
 
    print batch_y[0]
-   misc.imsave(OUTPUT_DIR+'attributes.png', canvas)
+   misc.imsave(OUTPUT_DIR+'generated.png', canvas)
    # batch y should be chosen from the test set
    exit()
    batch_y = np.random.choice([0, 1], size=(BATCH_SIZE,9))

@@ -33,14 +33,18 @@ if __name__ == '__main__':
    parser.add_argument('--CHECKPOINT_DIR', required=True,help='checkpoint directory',type=str)
    parser.add_argument('--OUTPUT_DIR',     required=False,help='Directory to save data', type=str,default='./')
    parser.add_argument('--DATA_DIR',       required=True,help='Directory with data', type=str,default='./')
+   parser.add_argument('--DATASET',        required=True,help='Dataset to use', type=str,default='zoo')
+   parser.add_argument('--SIZE',           required=False,help='Size of images', type=int,default=64)
    parser.add_argument('--NUM',            required=False,help='Maximum images to interpolate',  type=int,default=9)
    a = parser.parse_args()
 
    CHECKPOINT_DIR = a.CHECKPOINT_DIR
    OUTPUT_DIR     = a.OUTPUT_DIR
    DATA_DIR       = a.DATA_DIR
+   DATASET        = a.DATASET
    NUM            = a.NUM
    BATCH_SIZE     = NUM
+   SIZE           = a.SIZE
 
    try: os.makedirs(OUTPUT_DIR)
    except: pass
@@ -48,10 +52,12 @@ if __name__ == '__main__':
    # placeholders for data going into the network
    global_step = tf.Variable(0, name='global_step', trainable=False)
    z           = tf.placeholder(tf.float32, shape=(BATCH_SIZE, 100), name='z')
-   y           = tf.placeholder(tf.float32, shape=(BATCH_SIZE, 4), name='y')
+   if DATASET == 'zoo': y_dim = 37
+   if DATASET == 'efigi': y_dim = 4
+   y           = tf.placeholder(tf.float32, shape=(BATCH_SIZE, y_dim), name='y')
 
    # generated images
-   gen_images = netG(z, y, BATCH_SIZE)
+   gen_images = netG(z, y, BATCH_SIZE, SIZE)
    
    saver = tf.train.Saver(max_to_keep=1)
    init = tf.group(tf.global_variables_initializer(), tf.local_variables_initializer())
@@ -71,17 +77,21 @@ if __name__ == '__main__':
          exit()
    
    print 'Loading data...'
-   images, annots, test_images, test_annots, _ = data_ops.load_galaxy(DATA_DIR)
-   test_len = len(test_annots)
+   if DATASET == 'zoo': train_images, train_annots, train_ids, test_images, test_annots, test_ids = data_ops.load_zoo(DATA_DIR, SIZE)
+   if DATASET == 'efigi': train_images, train_annots, train_ids, test_images, test_annots, test_ids = data_ops.load_efigi(DATA_DIR, SIZE)
+
+   test_len = len(test_ids)
+
+   # I'll need to pick some random attributes, but the same z, then interpolate between z
 
    print 'generating data...'
    idx     = np.random.choice(np.arange(test_len), BATCH_SIZE, replace=False)
    batch_y = test_annots[idx]
-   batch_y[:NUM+1] = batch_y[3] # gotta make sure they have the same attributes
+   batch_y[:NUM+1] = batch_y[1] # gotta make sure they have the same attributes
    print batch_y[0]
 
    # the two z vectors to interpolate between
-   two_z = np.random.normal(0, 1.0, size=[2, 100]).astype(np.float32)
+   two_z = np.random.normal(-1.0, 1.0, size=[2, 100]).astype(np.float32)
 
    alpha = np.linspace(0,1, num=NUM)
    latent_vectors = []
