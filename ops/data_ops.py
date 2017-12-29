@@ -4,18 +4,29 @@
 
 '''
 
+import scipy.misc as misc
+import cPickle as pickle
 import tensorflow as tf
+from tqdm import tqdm
 import numpy as np
+import requests
+import ntpath
 import math
 import glob
-import scipy.misc as misc
-import ntpath
-from tqdm import tqdm
+import gzip
 import os
-import requests
-import gzip
-import cPickle as pickle
-import gzip
+
+
+'''
+   Image normalizing functions
+'''
+def normalize(image):
+   return (image/127.5)-1.0
+
+def unnormalize(image):
+   img = (img+1.)
+   img *= 127.5
+   return img
 
 '''
 
@@ -80,7 +91,7 @@ def load_efigi(data_dir, size):
    return np.asarray(train_images), np.asarray(train_attributes), np.asarray(train_ids), np.asarray(test_images), np.asarray(test_attributes), np.asarray(test_ids)
 
 '''
-   Galaxy zoo dataset. Just going to load it all in memory
+   Galaxy zoo dataset.
 '''
 def load_zoo(data_dir, size):
 
@@ -90,7 +101,7 @@ def load_zoo(data_dir, size):
    test_images = sorted(glob.glob(data_dir+'images_training_rev1/test/*.jpg'))
    test_ids    = [ntpath.basename(x.split('.')[0]) for x in test_images]
 
-   # put ids with image path just to be sure we get the correct image. Slow but oh well
+   # put ids with image path just to be sure we get the correct image. Slow but oh well, only done once
    id_dict = {}
    for img, id_ in zip(train_images, train_ids):
       id_dict[int(id_)] = img
@@ -125,15 +136,8 @@ def load_zoo(data_dir, size):
             test_attributes.append(att)
 
          d += 1
-         #if d == 65: break
+         if d == 65: break
 
    return np.asarray(train_images), np.asarray(train_attributes), np.asarray(train_ids), np.asarray(test_images), np.asarray(test_attributes), np.asarray(test_ids)
 
 
-def normalize(image):
-   return (image/127.5)-1.0
-
-def unnormalize(image):
-   img = (img+1.)
-   img *= 127.5
-   return img

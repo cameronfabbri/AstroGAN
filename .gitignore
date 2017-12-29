@@ -12,3 +12,5 @@ checkpoints/*
 output/*
 output*
 log*
+*DS_STORE*
+*.DS*

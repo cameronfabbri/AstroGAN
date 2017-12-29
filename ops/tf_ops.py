@@ -1,6 +1,6 @@
 '''
 
-   Operations commonly used in tensorflow
+   Operations I commonly use in tensorflow
 
 '''
 
@@ -159,6 +159,13 @@ def lrelu(x, leak=0.2):
    return tf.maximum(leak*x, x)
 
 '''
+   Exponential linear units
+   https://arxiv.org/abs/1511.07289
+'''
+def elu(x):
+   return tf.nn.elu(x)
+
+'''
    Tanh
 '''
 def tanh(x):
@@ -204,9 +211,3 @@ def concat_selu(x):
    return selu(tf.concat([x, -x], axis))
 
 ###### end activation functions #########
-
-def elu(x):
-   return tf.nn.elu(x)
-
-
-
