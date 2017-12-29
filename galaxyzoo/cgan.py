@@ -17,9 +17,9 @@ import os
 # my own imports
 sys.path.insert(0, '../ops/')
 sys.path.insert(0, '../')
-from tf_ops import *
 import data_ops
-from nets import *
+import tf_ops
+import nets
 
 if __name__ == '__main__':
 
@@ -33,8 +33,6 @@ if __name__ == '__main__':
    parser.add_argument('--DATA_DIR',   required=True, help='Directory where data is',  type=str,  default='./')
    parser.add_argument('--BATCH_SIZE', required=False,help='Batch size',               type=int,  default=64)
    a = parser.parse_args()
-
-   exit()
 
    GAN            = a.GAN
    SIZE           = a.SIZE
