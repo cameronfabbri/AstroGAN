@@ -19,9 +19,9 @@ import os
 sys.path.insert(0, '../ops/')
 sys.path.insert(0, '../')
 from config import classes
-import tf_ops
+import data_ops
 from nets import *
-from data_ops import *
+from tf_ops import *
 
 if __name__ == '__main__':
 
