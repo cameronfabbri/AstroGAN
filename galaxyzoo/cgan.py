@@ -15,6 +15,8 @@ import time
 import sys
 import os
 
+# prints the entire numpy array
+#np.set_printoptions(threshold=np.nan)
 # my own imports
 sys.path.insert(0, '../ops/')
 sys.path.insert(0, '../')
@@ -75,6 +77,9 @@ if __name__ == '__main__':
 
    # multiply y by the mask of attributes actually being used
    y = tf.multiply(y,mask)
+
+   # repeat the classes mask to be of batch size
+   classes = np.array([classes,]*BATCH_SIZE)
 
    # generated images
    gen_images = netG(z, y, BATCH_SIZE, SIZE)
@@ -201,7 +206,7 @@ if __name__ == '__main__':
          batch_y      = train_annots[idx]
          batch_images = train_images[idx]
 
-         sess.run(D_train_op, feed_dict={z:batch_z, y:batch_y, real_images:batch_images})
+         sess.run(D_train_op, feed_dict={z:batch_z, y:batch_y, real_images:batch_images, mask:classes})
       
       # now train the generator once! use normal distribution, not uniform!!
       idx          = np.random.choice(np.arange(train_len), BATCH_SIZE, replace=False)
@@ -210,9 +215,9 @@ if __name__ == '__main__':
       batch_images = train_images[idx]
 
       # now get all losses and summary *without* performing a training step - for tensorboard and printing
-      sess.run(G_train_op, feed_dict={z:batch_z, y:batch_y, real_images:batch_images})
+      sess.run(G_train_op, feed_dict={z:batch_z, y:batch_y, real_images:batch_images, mask:classes})
       D_loss, G_loss, summary = sess.run([errD, errG, merged_summary_op],
-                              feed_dict={z:batch_z, y:batch_y, real_images:batch_images})
+                              feed_dict={z:batch_z, y:batch_y, real_images:batch_images, mask:classes})
 
       summary_writer.add_summary(summary, step)
 
@@ -229,7 +234,7 @@ if __name__ == '__main__':
          batch_y      = test_annots[idx]
          batch_images = test_images[idx]
          batch_ids    = test_ids[idx]
-         gen_imgs = np.squeeze(np.asarray(sess.run([gen_images], feed_dict={z:batch_z, y:batch_y, real_images:batch_images})))
+         gen_imgs = np.squeeze(np.asarray(sess.run([gen_images], feed_dict={z:batch_z, y:batch_y, real_images:batch_images, mask:classes})))
 
          num = 0
          for img,atr in zip(gen_imgs, batch_y):
