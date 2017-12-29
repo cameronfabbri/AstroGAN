@@ -58,13 +58,13 @@ if __name__ == '__main__':
    info_dict['BATCH_SIZE'] = BATCH_SIZE
    info_dict['classes'] = classes
 
+   try: os.makedirs(IMAGES_DIR)
+   except: pass
+
    exp_pkl = open(CHECKPOINT_DIR+'info.pkl', 'wb')
    data = pickle.dumps(info_dict)
    exp_pkl.write(data)
    exp_pkl.close()
-
-   try: os.makedirs(IMAGES_DIR)
-   except: pass
 
    global_step = tf.Variable(0, name='global_step', trainable=False)
    # placeholders for data going into the network
