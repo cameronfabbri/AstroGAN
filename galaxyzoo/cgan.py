@@ -237,7 +237,8 @@ if __name__ == '__main__':
          gen_imgs = np.squeeze(np.asarray(sess.run([gen_images], feed_dict={z:batch_z, y:batch_y, real_images:batch_images, mask:classes})))
 
          num = 0
-         for img,atr in zip(gen_imgs, batch_y):
+         # gotta multiply by mask here
+         for img,atr in zip(gen_imgs, np.multiply(batch_y,classes)):
             img = (img+1.)
             img *= 127.5
             img = np.clip(img, 0, 255).astype(np.uint8)
