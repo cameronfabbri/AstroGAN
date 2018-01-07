@@ -9,8 +9,6 @@
    attributes in the test set, z is sampled randomly, so you can have multiple galaxies generated
    with the same attributes.
 
-   Also this counts via batches (batch size 64), so if you say generate 65 images it'll generate 128
-
 '''
 import tensorflow.contrib.layers as tcl
 from matplotlib.pyplot import cm
@@ -88,37 +86,54 @@ if __name__ == '__main__':
          exit()
 
    print 'Loading data...'
-   train_images, train_annots, train_ids, test_images, test_annots, test_ids = data_ops.load_zoo(DATA_DIR, SIZE)
+   train_images, train_annots, train_ids, test_images, test_annots, test_ids = data_ops.load_efigi(DATA_DIR, SIZE)
    test_len = len(test_annots)
 
-   num_gen = 0
-   gen_z = [] # z vectors used to generate images
-   gen_y = [] # y vectors used to generate images
    print 'generating data...'
-   while num_gen < MAX_GEN:
+   batch_z = np.random.normal(-1.0, 1.0, size=[BATCH_SIZE, 100]).astype(np.float32)
+   idx     = np.random.choice(np.arange(test_len), BATCH_SIZE, replace=False)
+   batch_y = test_annots[idx]
 
-      batch_z = np.random.normal(-1.0, 1.0, size=[BATCH_SIZE, 100]).astype(np.float32)
-      idx     = np.random.choice(np.arange(test_len), BATCH_SIZE, replace=False)
-      batch_y = test_annots[idx]
+   gen_imgs = sess.run([gen_images], feed_dict={z:batch_z, y:batch_y})[0]
 
-      gen_imgs = sess.run([gen_images], feed_dict={z:batch_z, y:batch_y, mask:classes})[0]
+   canvas = 255*np.ones((80, 80, 3), dtype=np.uint8)
+   start_x = 10
+   start_y = 10
+   end_y = start_y+64
 
-      batch_y = np.multiply(batch_y,classes)
+   for img in gen_imgs:
+      img = (img+1.)
+      img *= 127.5
+      img = np.clip(img, 0, 255).astype(np.uint8)
+      img = np.reshape(img, (64, 64, -1))
+      end_x = start_x+64
+      canvas[start_y:end_y, start_x:end_x, :] = img
+      break
 
-      for img,cur_z,cur_y in zip(gen_imgs, batch_y, batch_y):
+   print batch_y[0]
+   misc.imsave(OUTPUT_DIR+'generated.png', canvas)
+   # batch y should be chosen from the test set
+   exit()
+   batch_y = np.random.choice([0, 1], size=(BATCH_SIZE,9))
+   batch_y[0][:] = 0
+   batch_y[0][-3] = male # make male or female
+   for i in range(14):
+      batch_y[0][i] = 1
+      print batch_y[0]
+      gen_imgs = sess.run([gen_images], feed_dict={z:batch_z, y:batch_y})[0]
+      for img in gen_imgs:
          img = (img+1.)
          img *= 127.5
          img = np.clip(img, 0, 255).astype(np.uint8)
          img = np.reshape(img, (64, 64, -1))
+         break
+      end_x = start_x+64
+      canvas[start_y:end_y, start_x:end_x, :] = img
+      start_x += 64+10
+   
+      batch_y = np.random.choice([0, 1], size=(BATCH_SIZE,9))
+      batch_y[0][:] = 0
+      batch_y[0][-3] = male # make male or female
 
-         # save out image, z, and y*classes
-         misc.imsave(OUTPUT_DIR+str(num_gen)+'.png', img)
-         gen_z.append(cur_z)
-         gen_y.append(cur_y)
-
-         num_gen += 1
-
-   # save out numpy arrays
-   np.save(OUTPUT_DIR+'z_vectors.npy', np.asarray(gen_z))
-   np.save(OUTPUT_DIR+'y_vectors.npy', np.asarray(gen_y))
-
+   misc.imsave(OUTPUT_DIR+'attributes.png', canvas)
+   exit()
