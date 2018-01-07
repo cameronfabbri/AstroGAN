@@ -15,8 +15,6 @@
 
 import numpy as np
 
-use_all=0
-
 # Question 1: Is the object a smooth galaxy, a galaxy with features/disk or a star?
 class1_1=1
 class1_2=1
