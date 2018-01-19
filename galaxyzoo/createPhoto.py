@@ -1,14 +1,21 @@
 '''
 
-   This file generates celeba latent z vectors and the corresponding images such that the encoder can be trained
+   Generates galaxies along with their corresponding z and y vectors. This DOES take into account
+   config.py, and uses the y vectors from the test split I made.
+
+   Train/test split was made just using bash shuf on the training images
+
+   You can create an arbitrary number of galaxies because although there are a limited amount of
+   attributes in the test set, z is sampled randomly, so you can have multiple galaxies generated
+   with the same attributes.
 
 '''
-import matplotlib.pyplot as plt
-from matplotlib.pyplot import cm
-import scipy.misc as misc
-import tensorflow as tf
 import tensorflow.contrib.layers as tcl
+from matplotlib.pyplot import cm
+import matplotlib.pyplot as plt
+import scipy.misc as misc
 import cPickle as pickle
+import tensorflow as tf
 from tqdm import tqdm
 import numpy as np
 import argparse
@@ -20,17 +27,16 @@ import cv2
 import os
 
 sys.path.insert(0, '../ops/')
-
+sys.path.insert(0, '../')
+from config import classes
 from tf_ops import *
-import data_ops
 from nets import *
-
+import data_ops
 
 if __name__ == '__main__':
 
    parser = argparse.ArgumentParser()
    parser.add_argument('--CHECKPOINT_DIR', required=True,help='checkpoint directory',type=str)
-   parser.add_argument('--DATASET',        required=False,help='The DATASET to use',      type=str,default='galaxy')
    parser.add_argument('--OUTPUT_DIR',     required=False,help='Directory to save data', type=str,default='./')
    parser.add_argument('--MAX_GEN',        required=False,help='Maximum images to generate',  type=int,default=5)
    parser.add_argument('--SIZE',           required=False,help='Size of images', type=int,default=64)
@@ -38,7 +44,6 @@ if __name__ == '__main__':
    a = parser.parse_args()
 
    CHECKPOINT_DIR = a.CHECKPOINT_DIR
-   DATASET        = a.DATASET
    OUTPUT_DIR     = a.OUTPUT_DIR
    MAX_GEN        = a.MAX_GEN
    DATA_DIR       = a.DATA_DIR
@@ -51,9 +56,14 @@ if __name__ == '__main__':
 
    # placeholders for data going into the network
    z           = tf.placeholder(tf.float32, shape=(BATCH_SIZE, 100), name='z')
-   if DATASET == 'zoo': y_dim = 37
-   if DATASET == 'efigi': y_dim = 4
-   y           = tf.placeholder(tf.float32, shape=(BATCH_SIZE, y_dim), name='y')
+   y           = tf.placeholder(tf.float32, shape=(BATCH_SIZE, 37), name='y')
+   mask        = tf.placeholder(tf.float32, shape=(BATCH_SIZE, 37), name='mask')
+
+   # multiply y by the mask of attributes actually being used
+   y = tf.multiply(y,mask)
+
+   # repeat the classes mask to be of batch size
+   classes = np.array([classes,]*BATCH_SIZE)
 
    # generated images
    gen_images = netG(z, y, BATCH_SIZE, SIZE)
@@ -76,8 +86,7 @@ if __name__ == '__main__':
          exit()
 
    print 'Loading data...'
-   if DATASET == 'zoo': train_images, train_annots, train_ids, test_images, test_annots, test_ids = data_ops.load_zoo(DATA_DIR, SIZE)
-   if DATASET == 'efigi': train_images, train_annots, train_ids, test_images, test_annots, test_ids = data_ops.load_efigi(DATA_DIR, SIZE)
+   train_images, train_annots, train_ids, test_images, test_annots, test_ids = data_ops.load_efigi(DATA_DIR, SIZE)
    test_len = len(test_annots)
 
    print 'generating data...'

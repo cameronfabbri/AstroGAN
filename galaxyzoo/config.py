@@ -15,8 +15,6 @@
 
 import numpy as np
 
-use_all=0
-
 # Question 1: Is the object a smooth galaxy, a galaxy with features/disk or a star?
 class1_1=1
 class1_2=1
@@ -45,36 +43,36 @@ class6_1=0
 class6_2=0
 
 # Question 7: How round is the smooth galaxy?
-class7_1=1
-class7_2=1
-class7_3=1
+class7_1=0
+class7_2=0
+class7_3=0
 
 # Question 8: What is the odd feature? 
-class8_1=1
-class8_2=1
-class8_3=1
-class8_4=1
-class8_5=1
-class8_6=1
-class8_7=1
+class8_1=0
+class8_2=0
+class8_3=0
+class8_4=0
+class8_5=0
+class8_6=0
+class8_7=0
 
 # Question 9: What shape is the bulge in the edge-on galaxy?
-class9_1=1
-class9_2=1
-class9_3=1
+class9_1=0
+class9_2=0
+class9_3=0
 
 # Question 10: How tightly wound are the spiral arms?
-class10_1=1
-class10_2=1
-class10_3=1
+class10_1=0
+class10_2=0
+class10_3=0
 
 # Question 11: How many spiral arms are there?
-class11_1=1
-class11_2=1
-class11_3=1
-class11_4=1
-class11_5=1
-class11_6=1
+class11_1=0
+class11_2=0
+class11_3=0
+class11_4=0
+class11_5=0
+class11_6=0
 
 # all of the classes in an array. This will be used as a mask on the attributes loaded.
 classes = np.asarray([class1_1,  class1_2,  class1_3,
