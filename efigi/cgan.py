@@ -2,7 +2,6 @@
 
    Conditional GAN for the EFIGI dataset.
 
-
 '''
 import matplotlib.pyplot as plt
 from matplotlib.pyplot import cm
@@ -45,9 +44,8 @@ if __name__ == '__main__':
 
    print 'Loading data...'
    train_images, train_annots, train_ids, test_images, test_annots, test_ids = data_ops.load_efigi(DATA_DIR, REDSHIFT, 64)
+   
    y_dim = 4
-
-   # if using redshift attributes, load them
    if REDSHIFT: y_dim = 5
 
    try: os.makedirs(IMAGES_DIR)
@@ -157,8 +155,6 @@ if __name__ == '__main__':
    ########################################### training portion
 
    step = sess.run(global_step)
-
-
    train_len = len(train_annots)
    test_len  = len(test_annots)
 
@@ -233,5 +229,3 @@ if __name__ == '__main__':
    
    saver.save(sess, CHECKPOINT_DIR+'checkpoint-'+str(step))
    saver.export_meta_graph(CHECKPOINT_DIR+'checkpoint-'+str(step)+'.meta')
-
-
