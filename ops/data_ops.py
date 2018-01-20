@@ -30,7 +30,7 @@ def unnormalize(image):
 
 '''
 
-   Loading up the galaxy dataset. Only considering the following:
+   Loading up the galaxy dataset.
    
    1  T               - EFIGI morphological type
    7  Arm strength    - Strength of spiral arms
@@ -47,7 +47,20 @@ def unnormalize(image):
    49 Multiplicity    - Abundance of neighbouring galaxies
 
 '''
-def load_efigi(data_dir, size):
+def load_efigi(data_dir, redshift, size):
+
+   redict = {}
+   if redshift:
+      d=0
+      with open(data_dir+'EFIGI_coord_redshift.txt','r') as f:
+         for line in f:
+            if d==0:
+               d=1
+               continue
+            line = line.rstrip().split()
+            galaxy_id = line[0]
+            redshift  = float(line[9])
+            redict[galaxy_id] = redshift
 
    #idx = np.array([0, 1, 7, 10, 13, 16, 19, 22, 25, 28, 31, 34, 40, 49])
    idx = np.array([7, 10, 31, 49])
@@ -71,18 +84,20 @@ def load_efigi(data_dir, size):
    with open(data_dir+'EFIGI_attributes.txt', 'r') as f:
       for line in f:
          line     = line.rstrip().split()
-         image_id = line[0]
+         galaxy_id = line[0]
          line     = np.asarray(line[1:])
          line     = line[idx].astype('float32')
-         if image_id in train_ids:
-            img = misc.imread(iptr+image_id+'.png').astype('float32')
+         if redshift: line = np.append(line, redict[galaxy_id]) # if using redshift, add it to the attributes
+         
+         if galaxy_id in train_ids:
+            img = misc.imread(iptr+galaxy_id+'.png').astype('float32')
             img = misc.imresize(img, (size, size))
             img = normalize(img)
             train_images.append(img)
             train_attributes.append(line)
-         elif image_id in test_ids:
-            paths.append(ipte+image_id+'.png')
-            img = misc.imread(ipte+image_id+'.png').astype('float32')
+         elif galaxy_id in test_ids:
+            paths.append(ipte+galaxy_id+'.png')
+            img = misc.imread(ipte+galaxy_id+'.png').astype('float32')
             img = misc.imresize(img, (size, size))
             img = normalize(img)
             test_images.append(img)

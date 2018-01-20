@@ -1,5 +1,8 @@
 '''
-   conditional gan
+
+   Conditional GAN for the EFIGI dataset.
+
+
 '''
 import matplotlib.pyplot as plt
 from matplotlib.pyplot import cm
@@ -18,35 +21,34 @@ sys.path.insert(0, '../ops/')
 sys.path.insert(0, '../')
 
 from tf_ops import *
-import data_ops
 from nets import *
+import data_ops
 
 if __name__ == '__main__':
 
    parser = argparse.ArgumentParser()
-   parser.add_argument('--LOSS',       required=False,help='Type of GAN loss to use', type=str,default='wgan')
-   parser.add_argument('--DATASET',    required=False,help='The DATASET to use',      type=str,default='galaxy')
-   parser.add_argument('--DATA_DIR',   required=False,help='Directory where data is', type=str,default='./')
-   parser.add_argument('--EPOCHS',     required=False,help='Maximum training epochs', type=int,default=100000)
    parser.add_argument('--BATCH_SIZE', required=False,help='Batch size',              type=int,default=64)
-   parser.add_argument('--DIST',       required=False,help='Distribution to use',     type=str,default='normal')
-   parser.add_argument('--MATCH',      required=False,help='Match discriminator',     type=int,default=0)
+   parser.add_argument('--REDSHIFT',   required=False,help='Include redshift or not', type=int,default=0)
+   parser.add_argument('--DATA_DIR',   required=True, help='Directory where data is', type=str,default='./')
+   parser.add_argument('--EPOCHS',     required=False,help='Maximum training epochs', type=int,default=100000)
+   parser.add_argument('--LOSS',       required=False,help='Type of GAN loss to use', type=str,default='wgan')
    a = parser.parse_args()
 
-   LOSS           = a.LOSS
-   DIST           = a.DIST
-   MATCH          = bool(a.MATCH)
-   EPOCHS         = a.EPOCHS
-   DATASET        = a.DATASET
-   DATA_DIR       = a.DATA_DIR
    BATCH_SIZE     = a.BATCH_SIZE
+   REDSHIFT       = bool(a.REDSHIFT)
+   DATA_DIR       = a.DATA_DIR
+   EPOCHS         = a.EPOCHS
+   LOSS           = a.LOSS
 
-   CHECKPOINT_DIR = 'checkpoints/gan/DATASET_'+DATASET+'/LOSS_'+LOSS+'/DIST_'+str(DIST)+'/MATCH_'+str(MATCH)+'/'
+   CHECKPOINT_DIR = 'checkpoints/LOSS_'+LOSS+'/REDSHIFT_'+str(REDSHIFT)+'/'
    IMAGES_DIR     = CHECKPOINT_DIR+'images/'
 
-
    print 'Loading data...'
-   images, annots, ids, test_images, test_annots, test_ids = data_ops.load_efigi(DATA_DIR, 64)
+   train_images, train_annots, train_ids, test_images, test_annots, test_ids = data_ops.load_efigi(DATA_DIR, REDSHIFT, 64)
+   y_dim = 4
+
+   # if using redshift attributes, load them
+   if REDSHIFT: y_dim = 5
 
    try: os.makedirs(IMAGES_DIR)
    except: pass
@@ -55,8 +57,7 @@ if __name__ == '__main__':
    global_step = tf.Variable(0, name='global_step', trainable=False)
    real_images = tf.placeholder(tf.float32, shape=(BATCH_SIZE, 64, 64, 3), name='real_images')
    z           = tf.placeholder(tf.float32, shape=(BATCH_SIZE, 100), name='z')
-   #y           = tf.placeholder(tf.float32, shape=(BATCH_SIZE, 14), name='y')
-   y           = tf.placeholder(tf.float32, shape=(BATCH_SIZE, 4), name='y')
+   y           = tf.placeholder(tf.float32, shape=(BATCH_SIZE, y_dim), name='y')
 
    # generated images
    gen_images = netG(z, y, BATCH_SIZE, 64)
@@ -158,7 +159,7 @@ if __name__ == '__main__':
    step = sess.run(global_step)
 
 
-   train_len = len(annots)
+   train_len = len(train_annots)
    test_len  = len(test_annots)
 
    print 'train num:',train_len
@@ -174,8 +175,8 @@ if __name__ == '__main__':
       for critic_itr in range(n_critic):
          idx          = np.random.choice(np.arange(train_len), BATCH_SIZE, replace=False)
          batch_z      = np.random.normal(0.0, 1.0, size=[BATCH_SIZE, 100]).astype(np.float32)
-         batch_y      = annots[idx]
-         batch_images = images[idx]
+         batch_y      = train_annots[idx]
+         batch_images = train_images[idx]
 
          # randomly flip batch
          r = random.random()
@@ -188,27 +189,16 @@ if __name__ == '__main__':
          if r < 0.5:
             batch_images = np.flipud(batch_images)
 
-         if MATCH == True:
-            batch_fy = 1-batch_y
-            sess.run(D_train_op, feed_dict={z:batch_z, y:batch_y, fy:batch_fy, real_images:batch_images})
-         else:
-            sess.run(D_train_op, feed_dict={z:batch_z, y:batch_y, real_images:batch_images})
+         sess.run(D_train_op, feed_dict={z:batch_z, y:batch_y, real_images:batch_images})
       
       # now train the generator once! use normal distribution, not uniform!!
       idx          = np.random.choice(np.arange(train_len), BATCH_SIZE, replace=False)
       batch_z      = np.random.normal(0.0, 1.0, size=[BATCH_SIZE, 100]).astype(np.float32)
-      batch_y      = annots[idx]
-      batch_images = images[idx]
+      batch_y      = train_annots[idx]
+      batch_images = train_images[idx]
 
-      if MATCH == True:
-         batch_fy = 1-batch_y
-         sess.run(G_train_op, feed_dict={z:batch_z, y:batch_y, fy:batch_fy, real_images:batch_images})
-         D_loss, G_loss, summary = sess.run([errD, errG, merged_summary_op],
-                                 feed_dict={z:batch_z, y:batch_y, fy: batch_fy, real_images:batch_images})
-      else:
-         # now get all losses and summary *without* performing a training step - for tensorboard and printing
-         sess.run(G_train_op, feed_dict={z:batch_z, y:batch_y, real_images:batch_images})
-         D_loss, G_loss, summary = sess.run([errD, errG, merged_summary_op],
+      sess.run(G_train_op, feed_dict={z:batch_z, y:batch_y, real_images:batch_images})
+      D_loss, G_loss, summary = sess.run([errD, errG, merged_summary_op],
                                  feed_dict={z:batch_z, y:batch_y, real_images:batch_images})
 
       summary_writer.add_summary(summary, step)
@@ -216,7 +206,7 @@ if __name__ == '__main__':
       print 'epoch:',epoch_num,'step:',step,'D loss:',D_loss,'G_loss:',G_loss,'time:',time.time()-start
       step += 1
     
-      if step%500 == 0:
+      if step%5 == 0:
          print 'Saving model...'
          saver.save(sess, CHECKPOINT_DIR+'checkpoint-'+str(step))
          saver.export_meta_graph(CHECKPOINT_DIR+'checkpoint-'+str(step)+'.meta')
@@ -225,22 +215,9 @@ if __name__ == '__main__':
          batch_z      = np.random.normal(0.0, 1.0, size=[BATCH_SIZE, 100]).astype(np.float32)
          batch_y      = test_annots[idx]
          batch_images = test_images[idx]
-         '''
-         idx          = np.random.choice(np.arange(train_len), BATCH_SIZE, replace=False)
-         batch_z      = np.random.normal(0.0, 1.0, size=[BATCH_SIZE, 100]).astype(np.float32)
-         batch_y      = annots[idx]
-         batch_img    = images[idx]
-         batch_images = np.empty((BATCH_SIZE, 64, 64, 3), dtype=np.float32)
-         '''
 
-         if MATCH == True:
-            batch_fy = 1-batch_y
-            # comes out as (1, batch, 64, 64, 3), so squeezing it
-            gen_imgs = np.squeeze(np.asarray(sess.run([gen_images],
-                                    feed_dict={z:batch_z, y:batch_y, fy:batch_fy,real_images:batch_images})))
-         else:
-            gen_imgs = np.squeeze(np.asarray(sess.run([gen_images],
-                                    feed_dict={z:batch_z, y:batch_y, real_images:batch_images})))
+         gen_imgs = np.squeeze(np.asarray(sess.run([gen_images],
+                                 feed_dict={z:batch_z, y:batch_y, real_images:batch_images})))
 
          num = 0
          for img,atr in zip(gen_imgs, batch_y):
@@ -253,6 +230,7 @@ if __name__ == '__main__':
                f.write('step_'+str(step)+'_num_'+str(num)+','+str(atr)+'\n')
             num += 1
             if num == 5: break
+   
    saver.save(sess, CHECKPOINT_DIR+'checkpoint-'+str(step))
    saver.export_meta_graph(CHECKPOINT_DIR+'checkpoint-'+str(step)+'.meta')
 
