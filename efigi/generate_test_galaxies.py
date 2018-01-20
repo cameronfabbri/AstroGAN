@@ -81,10 +81,15 @@ if __name__ == '__main__':
 
    test_len = len(test_annots)
 
-   print 'generating data...'
-   batch_z = np.random.normal(0.0, 1.0, size=[BATCH_SIZE, 100]).astype(np.float32)
-   idx     = np.random.choice(np.arange(test_len), BATCH_SIZE, replace=False)
-   batch_y = test_annots[idx]
+   # TODO need to go through all test galaxies in batches
+   idx = 
+   for galaxy_id, annot in zip(test_ids, test_annots):
+      for count in range(MAX_GEN):
+         batch_z = np.random.normal(0.0, 1.0, size=[BATCH_SIZE, 100]).astype(np.float32)
+         batch_y = test_annots[idx]
+         idx     = idx + 1
+
+   #np.random.choice(np.arange(test_len), BATCH_SIZE, replace=False)
 
    gen_imgs = np.asarray(sess.run([gen_images], feed_dict={z:batch_z, y:batch_y})[0])
    
