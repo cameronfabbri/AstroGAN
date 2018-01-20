@@ -144,12 +144,12 @@ if __name__ == '__main__':
    # restore previous model if there is one
    ckpt = tf.train.get_checkpoint_state(CHECKPOINT_DIR)
    if ckpt and ckpt.model_checkpoint_path:
-      print "Restoring previous model..."
+      print 'Restoring previous model...'
       try:
          saver.restore(sess, ckpt.model_checkpoint_path)
-         print "Model restored"
+         print 'Model restored'
       except:
-         print "Could not restore model"
+         print 'Could not restore model'
          pass
    
    ########################################### training portion
