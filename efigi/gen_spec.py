@@ -94,7 +94,7 @@ if __name__ == '__main__':
    for n in range(MAX_GEN):
       batch_z = np.random.normal(0.0, 1.0, size=[BATCH_SIZE, 100]).astype(np.float32)
       img = np.asarray(sess.run([gen_images], feed_dict={z:batch_z, y:batch_y})[0])[0]
-      misc.imsave(OUTPUT_DIR+str(n)+'_.png',t_img)
+      misc.imsave(OUTPUT_DIR+str(n)+'_.png',img)
       print img.shape
       exit()
    exit()
