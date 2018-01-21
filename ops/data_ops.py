@@ -60,6 +60,7 @@ def load_efigi(data_dir, redshift, size):
             line = line.rstrip().split()
             galaxy_id = line[0]
             redshift  = float(line[9])
+            if redshift < 0: continue # redshift missing, so has a value of -99.99 we don't want
             redict[galaxy_id] = redshift
 
    #idx = np.array([0, 1, 7, 10, 13, 16, 19, 22, 25, 28, 31, 34, 40, 49])
@@ -80,6 +81,7 @@ def load_efigi(data_dir, redshift, size):
    train_attributes = []
    test_attributes  = []
 
+   r_test_ids = []
    paths = []
    with open(data_dir+'EFIGI_attributes.txt', 'r') as f:
       for line in f:
@@ -87,7 +89,9 @@ def load_efigi(data_dir, redshift, size):
          galaxy_id = line[0]
          line     = np.asarray(line[1:])
          line     = line[idx].astype('float32')
-         if redshift: line = np.append(line, redict[galaxy_id]) # if using redshift, add it to the attributes
+         if redshift:
+            try: line = np.append(line, redict[galaxy_id]) # if using redshift, add it to the attributes
+            except: continue # don't use this one in training
          
          if galaxy_id in train_ids:
             img = misc.imread(iptr+galaxy_id+'.png').astype('float32')
@@ -102,8 +106,9 @@ def load_efigi(data_dir, redshift, size):
             img = normalize(img)
             test_images.append(img)
             test_attributes.append(line)
+            r_test_ids.append(galaxy_id)
 
-   return np.asarray(train_images), np.asarray(train_attributes), np.asarray(train_ids), np.asarray(test_images), np.asarray(test_attributes), np.asarray(test_ids)
+   return np.asarray(train_images), np.asarray(train_attributes), np.asarray(train_ids), np.asarray(test_images), np.asarray(test_attributes), np.asarray(r_test_ids)
 
 '''
    Galaxy zoo dataset.
