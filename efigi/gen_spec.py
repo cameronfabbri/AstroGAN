@@ -94,11 +94,11 @@ if __name__ == '__main__':
    for n in range(MAX_GEN):
       batch_z = np.random.normal(0.0, 1.0, size=[BATCH_SIZE, 100]).astype(np.float32)
       img = np.asarray(sess.run([gen_images], feed_dict={z:batch_z, y:batch_y})[0])[0]
+      misc.imsave(OUTPUT_DIR+str(i)+'_.png',t_img)
       print img.shape
       exit()
    exit()
    for t_img, t_annot, t_gid in zip(test_images, test_annots, test_ids):
-      #misc.imsave(OUTPUT_DIR+t_gid+'_.png',t_img)
       canvas = 255*np.ones((84, (MAX_GEN+1)*74+10 , 3), dtype=np.uint8)
       start_x = 10
       start_y = 10
