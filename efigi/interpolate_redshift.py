@@ -83,10 +83,10 @@ if __name__ == '__main__':
    batch_y[:NUM+1] = batch_y[1] # gotta make sure they have the same attributes
 
    # making up my own
-   batch_y[0][0] = 1.0 # arm strength
-   batch_y[0][1] = 1.0 # arm curvature
+   batch_y[0][0] = 1. # arm strength
+   batch_y[0][1] = 1. # arm curvature
    batch_y[0][2] = 0.0 # visible dust
-   batch_y[0][3] = 1.0 # multiplicity
+   batch_y[0][3] = 1. # multiplicity
 
    batch_y[1] = batch_y[0]
 
