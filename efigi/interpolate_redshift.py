@@ -81,17 +81,17 @@ if __name__ == '__main__':
    z[1] = z[0]
    batch_y = test_annots[idx]
    batch_y[:NUM+1] = batch_y[1] # gotta make sure they have the same attributes
+
+   batch_y[0][-1] = 0
+   batch_y[1][-1] = 1
    print batch_y[0]
    print batch_y[1]
-   print z[0]
-   print z[1]
    exit()
-
 
    alpha = np.linspace(0,1, num=NUM)
    latent_vectors = []
-   x1 = two_z[0]
-   x2 = two_z[1]
+   x1 = y[0]
+   x2 = y[1]
 
    for a in alpha:
       vector = x1*(1-a) + x2*a
