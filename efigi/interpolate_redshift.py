@@ -78,10 +78,13 @@ if __name__ == '__main__':
    print 'generating data...'
    idx     = np.random.choice(np.arange(test_len), BATCH_SIZE, replace=False)
    z = np.random.normal(-1.0, 1.0, size=[BATCH_SIZE, 100]).astype(np.float32)
+   z[1] = z[0]
    batch_y = test_annots[idx]
    batch_y[:NUM+1] = batch_y[1] # gotta make sure they have the same attributes
    print batch_y[0]
    print batch_y[1]
+   print z[0]
+   print z[1]
    exit()
 
 
