@@ -97,10 +97,8 @@ if __name__ == '__main__':
       latent_vectors.append(vector)
 
    latent_vectors = np.asarray(latent_vectors)
-   print latent_vectors
-   exit()
 
-   gen_imgs = sess.run([gen_images], feed_dict={z:latent_vectors, y:batch_y})[0]
+   gen_imgs = sess.run([gen_images], feed_dict={z:batch_z, y:latent_vectors})[0]
    canvas   = 255*np.ones((80, 64*(NUM+2), 3), dtype=np.uint8)
    start_x  = 10
    start_y  = 10
