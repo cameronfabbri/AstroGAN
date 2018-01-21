@@ -94,38 +94,4 @@ if __name__ == '__main__':
    for n in range(MAX_GEN):
       batch_z = np.random.normal(0.0, 1.0, size=[BATCH_SIZE, 100]).astype(np.float32)
       img = np.asarray(sess.run([gen_images], feed_dict={z:batch_z, y:batch_y})[0])[0]
-      misc.imsave(OUTPUT_DIR+str(n)+'_.png',img)
-      print img.shape
-      exit()
-   exit()
-   for t_img, t_annot, t_gid in zip(test_images, test_annots, test_ids):
-      canvas = 255*np.ones((84, (MAX_GEN+1)*74+10 , 3), dtype=np.uint8)
-      start_x = 10
-      start_y = 10
-      end_y = start_y+64
-      t_img = (t_img+1.)
-      t_img *= 127.5
-      t_img = np.clip(t_img, 0, 255).astype(np.uint8)
-      t_img = np.reshape(t_img, (64, 64, -1))
-      end_x = start_x+64
-      canvas[start_y:end_y, start_x:end_x, :] = t_img
-      start_x = end_x+10
-
-      # put a line of black pixels in between the real image and generated ones
-      canvas[:, end_x+5] = 0
-      
-      for count in range(MAX_GEN):
-         batch_z = np.random.normal(0.0, 1.0, size=[BATCH_SIZE, 100]).astype(np.float32)
-         batch_y = np.expand_dims(t_annot, 0)
-         img = np.asarray(sess.run([gen_images], feed_dict={z:batch_z, y:batch_y})[0])[0]
-         img = (img+1.)
-         img *= 127.5
-         img = np.clip(img, 0, 255).astype(np.uint8)
-         img = np.reshape(img, (64, 64, -1))
-         
-         end_x = start_x+64
-         canvas[start_y:end_y, start_x:end_x, :] = img
-         start_x = end_x + 10
-         
-      misc.imsave(OUTPUT_DIR+t_gid+'.png', canvas)
-   exit()
+      misc.imsave(OUTPUT_DIR+str(n)+'.png',img)
