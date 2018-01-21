@@ -83,7 +83,7 @@ if __name__ == '__main__':
    batch_y[:NUM+1] = batch_y[1] # gotta make sure they have the same attributes
 
    batch_y[0][-1] = 0
-   batch_y[1][-1] = 1
+   batch_y[1][-1] = 0.5
    print batch_y[0]
    print batch_y[1]
 
