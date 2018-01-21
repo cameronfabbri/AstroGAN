@@ -82,8 +82,8 @@ if __name__ == '__main__':
    batch_y = test_annots[idx]
    batch_y[:NUM+1] = batch_y[1] # gotta make sure they have the same attributes
 
-   batch_y[0][-1] = 0
-   batch_y[1][-1] = 0.5
+   batch_y[0][-1] = 0.001
+   batch_y[1][-1] = 0.1
    print batch_y[0]
    print batch_y[1]
 
@@ -97,6 +97,8 @@ if __name__ == '__main__':
       latent_vectors.append(vector)
 
    latent_vectors = np.asarray(latent_vectors)
+   print
+   print latent_vectors
 
    gen_imgs = sess.run([gen_images], feed_dict={z:batch_z, y:latent_vectors})[0]
    canvas   = 255*np.ones((80, 64*(NUM+1), 3), dtype=np.uint8)
