@@ -86,18 +86,19 @@ if __name__ == '__main__':
    batch_y[1][-1] = 1
    print batch_y[0]
    print batch_y[1]
-   exit()
 
    alpha = np.linspace(0,1, num=NUM)
    latent_vectors = []
-   x1 = y[0]
-   x2 = y[1]
+   x1 = batch_y[0]
+   x2 = batch_y[1]
 
    for a in alpha:
       vector = x1*(1-a) + x2*a
       latent_vectors.append(vector)
 
    latent_vectors = np.asarray(latent_vectors)
+   print latent_vectors
+   exit()
 
    gen_imgs = sess.run([gen_images], feed_dict={z:latent_vectors, y:batch_y})[0]
    canvas   = 255*np.ones((80, 64*(NUM+2), 3), dtype=np.uint8)
