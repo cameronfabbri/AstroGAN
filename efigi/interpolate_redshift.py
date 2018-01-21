@@ -93,8 +93,8 @@ if __name__ == '__main__':
    # min and max from dataset
    #batch_y[0][-1] = 2.635e-05
    #batch_y[1][-1] = 0.08245
-   batch_y[0][-1] = 0.1
-   batch_y[1][-1] = 0.5
+   batch_y[0][-1] = 1e-5
+   batch_y[1][-1] = 1e-1
    print batch_y[0]
    print batch_y[1]
 
