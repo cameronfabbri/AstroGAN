@@ -85,7 +85,7 @@ if __name__ == '__main__':
 
    # create attributes here
    arm_strength = 1.0
-   arm_curve    = 1.0
+   arm_curve    = 0.5
    dust         = 0.0
    mult         = 0.0
    redshift     = 2.18
