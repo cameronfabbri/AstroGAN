@@ -52,12 +52,13 @@ if __name__ == '__main__':
    except: pass
    
    exp_info = dict()
+   exp_info['CHECKPOINT_DIR']   = CHECKPOINT_DIR
    exp_info['BATCH_SIZE'] = BATCH_SIZE
-   #exp_info['REDSHIFT']   = REDSHIFT
    exp_info['DATA_DIR']   = DATA_DIR
    exp_info['CLASSES']    = classes
    exp_info['EPOCHS']     = EPOCHS
    exp_info['LOSS']       = LOSS
+
    exp_pkl = open(CHECKPOINT_DIR+'info.pkl', 'wb')
    data = pickle.dumps(exp_info)
    exp_pkl.write(data)

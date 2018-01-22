@@ -25,3 +25,10 @@ Each image saved out is the original test image on the left, then the next 5 col
 `python generate_test_galaxies.py --CHECKPOINT_DIR=checkpoints/LOSS_wgan/REDSHIFT_True/ --OUTPUT_DIR=output/galaxies_out/ --REDSHIFT=1 --DATA_DIR=/mnt/data1/images/`
 
 ___
+
+`generate_specific.py`: Generates `n` images all given different z vectors but with a user specified attribute. Useful
+for testing out different redshifts.
+
+___
+
+

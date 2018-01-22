@@ -1,0 +1,4 @@
+These checkpoints were done before I added in the extra attributes.
+The attributes in question were 7, 10, 31, and 49. The vector
+was only 4 dims (5 if redshift), so NO PADDING with 0's for
+missing classes

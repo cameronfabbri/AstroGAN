@@ -47,11 +47,10 @@ if __name__ == '__main__':
    print 'Loading data...'
    train_images, train_annots, train_ids, test_images, test_annots, test_ids = data_ops.load_efigi(DATA_DIR, CLASSES, 64)
 
-   y_dim = 18
-
    try: os.makedirs(OUTPUT_DIR)
    except: pass
 
+   y_dim = 18
    # placeholders for data going into the network
    z           = tf.placeholder(tf.float32, shape=(BATCH_SIZE, 100), name='z')
    y           = tf.placeholder(tf.float32, shape=(BATCH_SIZE, y_dim), name='y')
