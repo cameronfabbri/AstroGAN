@@ -4,13 +4,17 @@
 
 '''
 
-#f1 = '/mnt/data1/images/efigi/EFIGI_attributes.txt'
-#f2 = '/mnt/data1/images/efigi/EFIGI_coord_redshift.txt'
-
-f1 = '/home/fabbric/data/images/efigi/EFIGI_attributes.txt'
-f2 = '/home/fabbric/data/images/efigi/EFIGI_coord_redshift.txt'
-
+import argparse
 import numpy as np
+
+parser = argparse.ArgumentParser()
+parser.add_argument('--DATA_DIR',   required=True, help='Directory where data is', type=str,default='./')
+
+a = parser.parse_args()
+DATA_DIR = a.DATA_DIR
+
+f1 = DATA_DIR+'EFIGI_attributes.txt'
+f2 = DATA_DIR+'EFIGI_coord_redshift.txt'
 
 redict = {}
 d=0
@@ -47,7 +51,7 @@ with open(f1,'r') as f:
       try: line = np.append(line, redict[galaxy_id]) # if using redshift, add it to the attributes
       except: continue
 
-      print galaxy_id,line
+      #print galaxy_id,line
 
       arm_s.append(line[0])
       arm_c.append(line[1])
