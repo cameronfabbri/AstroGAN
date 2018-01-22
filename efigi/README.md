@@ -32,3 +32,4 @@ for testing out different redshifts.
 ___
 
 
+`interpolate_redshift.py`: takes in a random set of attributes from the test set and interpolates along a given redshift
