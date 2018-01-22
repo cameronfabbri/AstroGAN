@@ -9,4 +9,6 @@
 
 `python cgan.py --BATCH_SIZE=64 --REDSHIFT=1 --DATA_DIR=/mnt/data1/images/efigi/ --EPOCHS=1000 --LOSS=wgan`
 
+___
+
 
