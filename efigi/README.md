@@ -11,5 +11,11 @@
 
 ___
 
-`dataset_stats.py`
+`dataset_stats.py`: prints out some stats about the EFIGI dataset
+- data directory
+
+`python dataset_stats.py --DATA_DIR=/mnt/data1/images/efigi/`
+
+___
+
 
