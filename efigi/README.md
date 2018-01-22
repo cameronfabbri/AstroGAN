@@ -19,5 +19,9 @@ ___
 ___
 
 
-`generate_test_galaxies.py`
+`generate_test_galaxies.py`: Takes the entire test set attributes and generates from those with random z vectors.
+Each image saved out is the original test image on the left, then the next 5 columns are the generated ones.
 
+`python generate_test_galaxies.py --CHECKPOINT_DIR=checkpoints/LOSS_wgan/REDSHIFT_True/ --OUTPUT_DIR=output/galaxies_out/ --REDSHIFT=1 --DATA_DIR=/mnt/data1/images/`
+
+___
