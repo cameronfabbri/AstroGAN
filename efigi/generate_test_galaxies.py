@@ -108,4 +108,3 @@ if __name__ == '__main__':
          start_x = end_x + 10
          
       misc.imsave(OUTPUT_DIR+t_gid+'.png', canvas)
-   exit()

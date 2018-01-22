@@ -26,35 +26,35 @@ from tf_ops import *
 from nets import *
 import data_ops
 
-
 if __name__ == '__main__':
+   
+   pkl_file = open(sys.argv[1], 'rb')
+   a = pickle.load(pkl_file)
+   print a
+  
+   OUTPUT_DIR = sys.argv[2]
+   NUM    = int(sys.argv[3])
 
-   parser = argparse.ArgumentParser()
-   parser.add_argument('--CHECKPOINT_DIR', required=True,help='checkpoint directory',type=str)
-   parser.add_argument('--OUTPUT_DIR',     required=False,help='Directory to save data', type=str,default='./')
-   parser.add_argument('--DATA_DIR',       required=True,help='Directory with data', type=str,default='./')
-   parser.add_argument('--NUM',            required=False,help='Maximum images to interpolate',  type=int,default=9)
-   a = parser.parse_args()
-
-   CHECKPOINT_DIR = a.CHECKPOINT_DIR
-   OUTPUT_DIR     = a.OUTPUT_DIR
-   DATA_DIR       = a.DATA_DIR
-   NUM            = a.NUM
-   BATCH_SIZE     = NUM
+   CHECKPOINT_DIR = a['CHECKPOINT_DIR']
+   DATA_DIR       = a['DATA_DIR']
+   CLASSES        = a['CLASSES']
+   LOSS           = a['LOSS']
 
    try: os.makedirs(OUTPUT_DIR)
    except: pass
 
+   BATCH_SIZE = NUM
+
    # placeholders for data going into the network
    global_step = tf.Variable(0, name='global_step', trainable=False)
    z           = tf.placeholder(tf.float32, shape=(BATCH_SIZE, 100), name='z')
-   y           = tf.placeholder(tf.float32, shape=(BATCH_SIZE, 5), name='y')
+   y           = tf.placeholder(tf.float32, shape=(BATCH_SIZE, 18), name='y')
 
    # generated images
    gen_images = netG(z, y, BATCH_SIZE, 64)
-   
+
    saver = tf.train.Saver(max_to_keep=1)
-   init = tf.group(tf.global_variables_initializer(), tf.local_variables_initializer())
+   init  = tf.group(tf.global_variables_initializer(), tf.local_variables_initializer())
    sess  = tf.Session()
    sess.run(init)
    
@@ -71,8 +71,7 @@ if __name__ == '__main__':
          exit()
    
    print 'Loading data...'
-   REDSHIFT = 1
-   train_images, train_annots, train_ids, test_images, test_annots, test_ids = data_ops.load_efigi(DATA_DIR, REDSHIFT, 64)
+   train_images, train_annots, train_ids, test_images, test_annots, test_ids = data_ops.load_efigi(DATA_DIR, CLASSES, 64)
    test_len = len(test_ids)
 
    print 'generating data...'
