@@ -30,14 +30,12 @@ if __name__ == '__main__':
 
    parser = argparse.ArgumentParser()
    parser.add_argument('--BATCH_SIZE', required=False,help='Batch size',              type=int,default=64)
-   #parser.add_argument('--REDSHIFT',   required=False,help='Include redshift or not', type=int,default=0)
    parser.add_argument('--DATA_DIR',   required=True, help='Directory where data is', type=str,default='./')
    parser.add_argument('--EPOCHS',     required=False,help='Maximum training epochs', type=int,default=500)
    parser.add_argument('--LOSS',       required=False,help='Type of GAN loss to use', type=str,default='wgan')
    a = parser.parse_args()
 
    BATCH_SIZE     = a.BATCH_SIZE
-   #REDSHIFT       = bool(a.REDSHIFT)
    DATA_DIR       = a.DATA_DIR
    EPOCHS         = a.EPOCHS
    LOSS           = a.LOSS
@@ -47,7 +45,6 @@ if __name__ == '__main__':
    for i in classes:
       cn = cn + str(i)
 
-   #CHECKPOINT_DIR = 'checkpoints/LOSS_'+LOSS+'/REDSHIFT_'+str(REDSHIFT)+'/C_'+str(cn)+'/'
    CHECKPOINT_DIR = 'checkpoints/LOSS_'+LOSS+'/C_'+str(cn)+'/'
    IMAGES_DIR     = CHECKPOINT_DIR+'images/'
 
@@ -67,16 +64,9 @@ if __name__ == '__main__':
    exp_pkl.close()
 
    print 'Loading data...'
-   #train_images, train_annots, train_ids, test_images, test_annots, test_ids = data_ops.load_efigi(DATA_DIR, REDSHIFT, 64)
    train_images, train_annots, train_ids, test_images, test_annots, test_ids = data_ops.load_efigi(DATA_DIR, classes, 64)
    
    y_dim = 18
-   #y_dim = 4
-   #if REDSHIFT: y_dim = 5
-   #print train_images.shape
-   #print train_annots.shape
-   #print test_images.shape
-   #print test_annots.shape
 
    # placeholders for data going into the network
    global_step = tf.Variable(0, name='global_step', trainable=False)
