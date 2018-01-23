@@ -26,7 +26,6 @@ sys.path.insert(0, '../')
 from tf_ops import *
 from nets import *
 import data_ops
-from config import classes
 
 if __name__ == '__main__':
 
@@ -51,6 +50,7 @@ if __name__ == '__main__':
    except: pass
 
    # find y dimension
+   classes = CLASSES
    idx_ = np.array([1, 4, 7, 10, 13, 16, 19, 22, 25, 28, 31, 34, 37, 40, 43, 46, 49])
    idx_ = np.multiply(classes[:-1], idx_)
    idx = [x for x in idx_ if x != 0]
