@@ -188,7 +188,7 @@ if __name__ == '__main__':
       # train the discriminator
       for critic_itr in range(n_critic):
          idx          = np.random.choice(np.arange(train_len), BATCH_SIZE, replace=False)
-         batch_z      = np.random.normal(0.0, 1.0, size=[BATCH_SIZE, 100]).astype(np.float32)
+         batch_z      = np.random.normal(-1.0, 1.0, size=[BATCH_SIZE, 100]).astype(np.float32)
          batch_y      = train_annots[idx]
          batch_images = train_images[idx]
 
@@ -207,7 +207,7 @@ if __name__ == '__main__':
       
       # now train the generator once! use normal distribution, not uniform!!
       idx          = np.random.choice(np.arange(train_len), BATCH_SIZE, replace=False)
-      batch_z      = np.random.normal(0.0, 1.0, size=[BATCH_SIZE, 100]).astype(np.float32)
+      batch_z      = np.random.normal(-1.0, 1.0, size=[BATCH_SIZE, 100]).astype(np.float32)
       batch_y      = train_annots[idx]
       batch_images = train_images[idx]
 
@@ -226,13 +226,12 @@ if __name__ == '__main__':
          saver.export_meta_graph(CHECKPOINT_DIR+'checkpoint-'+str(step)+'.meta')
 
          idx          = np.random.choice(np.arange(test_len), BATCH_SIZE, replace=False)
-         batch_z      = np.random.normal(0.0, 1.0, size=[BATCH_SIZE, 100]).astype(np.float32)
+         batch_z      = np.random.normal(-1.0, 1.0, size=[BATCH_SIZE, 100]).astype(np.float32)
          batch_y      = test_annots[idx]
          batch_images = test_images[idx]
 
          gen_imgs = np.squeeze(np.asarray(sess.run([gen_images],
                                  feed_dict={z:batch_z, y:batch_y, real_images:batch_images})))
-
          num = 0
          for img,atr in zip(gen_imgs, batch_y):
             img = (img+1.)

@@ -30,34 +30,36 @@ import data_ops
 
 if __name__ == '__main__':
 
-   parser = argparse.ArgumentParser()
-   parser.add_argument('--CHECKPOINT_DIR', required=True,help='checkpoint directory',type=str)
-   parser.add_argument('--OUTPUT_DIR',     required=False,help='Directory to save data', type=str,default='./')
-   parser.add_argument('--REDSHIFT',       required=True,help='Redshift or not', type=int,default=0)
-   parser.add_argument('--DATA_DIR',       required=True,help='Data directory',type=str)
-   parser.add_argument('--MAX_GEN',        required=False,help='Maximum images to generate PER ATTR',type=int,default=5)
-   a = parser.parse_args()
+   pkl_file = open(sys.argv[1], 'rb')
+   a = pickle.load(pkl_file)
+  
+   MAX_GEN    = int(sys.argv[2])
 
-   CHECKPOINT_DIR = a.CHECKPOINT_DIR
-   OUTPUT_DIR     = a.OUTPUT_DIR
-   REDSHIFT       = bool(a.REDSHIFT)
-   DATA_DIR       = a.DATA_DIR
-   MAX_GEN        = a.MAX_GEN
+   CHECKPOINT_DIR = a['CHECKPOINT_DIR']
+   DATA_DIR       = a['DATA_DIR']
+   CLASSES        = a['CLASSES']
+   LOSS           = a['LOSS']
 
    BATCH_SIZE = 1
+
+   CHECKPOINT_DIR = '../'+CHECKPOINT_DIR
+
+   # convert to string for directory naming
+   cn = ''
+   for i in CLASSES:
+      cn = cn + str(i)
+   
+   OUTPUT_DIR = str(cn)+'_output/'
    
    print 'Loading data...'
-   train_images, train_annots, train_ids, test_images, test_annots, test_ids = data_ops.load_efigi(DATA_DIR, REDSHIFT, 64)
-
-   y_dim = 4
-   if REDSHIFT: y_dim = 5
+   train_images, train_annots, train_ids, test_images, test_annots, test_ids = data_ops.load_efigi(DATA_DIR, CLASSES, 64)
 
    try: os.makedirs(OUTPUT_DIR)
    except: pass
 
    # placeholders for data going into the network
    z           = tf.placeholder(tf.float32, shape=(BATCH_SIZE, 100), name='z')
-   y           = tf.placeholder(tf.float32, shape=(BATCH_SIZE, y_dim), name='y')
+   y           = tf.placeholder(tf.float32, shape=(BATCH_SIZE, 18), name='y')
 
    # generated images
    gen_images = netG(z, y, BATCH_SIZE, 64)

@@ -40,8 +40,10 @@ arm_c = []
 vd    = []
 mult  = []
 red   = []
+idx = np.asarray([1, 4, 7, 10, 13, 16, 19, 22, 25, 28, 31, 34, 37, 40, 43, 46, 49])
+
 with open(f1,'r') as f:
-   idx = np.array([7, 10, 31, 49])
+   #idx = np.array([7, 10, 31, 49])
    for line in f:
       line = line.rstrip().split()
       galaxy_id = line[0]
@@ -51,14 +53,17 @@ with open(f1,'r') as f:
       try: line = np.append(line, redict[galaxy_id]) # if using redshift, add it to the attributes
       except: continue
 
-      #print galaxy_id,line
+      for x in line:
+         if float(x) == float(-99.0): print galaxy_id
+         if float(x) == float(-99): print galaxy_id
+      #arm_s.append(line[0])
+      #arm_c.append(line[1])
+      #vd.append(line[2])
+      #mult.append(line[3])
+      #red.append(line[4])
 
-      arm_s.append(line[0])
-      arm_c.append(line[1])
-      vd.append(line[2])
-      mult.append(line[3])
-      red.append(line[4])
 
+exit()
 arm_s = np.asarray(arm_s)
 arm_c = np.asarray(arm_c)
 vd = np.asarray(vd)
