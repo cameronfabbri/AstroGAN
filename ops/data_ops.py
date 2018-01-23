@@ -31,7 +31,8 @@ def unnormalize(image):
 '''
 
    Loading up the galaxy dataset.
-   
+
+   0 GalaxyID
    1  T               - EFIGI morphological type
    4  Bulge_to_Total  - Bulge-to-total ratio
    7  Arm strength    - Strength of spiral arms
@@ -68,7 +69,11 @@ def load_efigi(data_dir, classes, size):
          redict[galaxy_id] = redshift
 
    # grab these ones from the file, then multiply by the mask that comes in (classes variable)
-   idx = np.array([1, 4, 7, 10, 13, 16, 19, 22, 25, 28, 31, 34, 37, 40, 43, 46, 49])
+   idx_ = np.array([1, 4, 7, 10, 13, 16, 19, 22, 25, 28, 31, 34, 37, 40, 43, 46, 49])
+   idx_ = np.multiply(classes[:-1], idx_)
+   idx = [x for x in idx_ if x != 0]
+
+   # og
    #idx = np.array([7, 10, 31, 49])
 
    train_images     = glob.glob(data_dir+'images/train/*.png')
@@ -88,6 +93,7 @@ def load_efigi(data_dir, classes, size):
 
    r_test_ids = []
    paths = []
+
    with open(data_dir+'EFIGI_attributes.txt', 'r') as f:
       for line in f:
          line     = line.rstrip().split()
@@ -97,8 +103,6 @@ def load_efigi(data_dir, classes, size):
          # add in the redshift attribute
          try: line = np.append(line, redict[galaxy_id])
          except: continue # don't use this one in training if no redshift (about 400 total)
-         # IMPORTANT - Multiply the attributes with the mask
-         line = np.multiply(line, classes)
          if galaxy_id in train_ids:
             img = misc.imread(iptr+galaxy_id+'.png').astype('float32')
             img = misc.imresize(img, (size, size))
