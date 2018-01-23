@@ -26,7 +26,7 @@ sys.path.insert(0, '../')
 from tf_ops import *
 from nets import *
 import data_ops
-
+from config import classes
 
 if __name__ == '__main__':
 
@@ -50,7 +50,13 @@ if __name__ == '__main__':
    try: os.makedirs(OUTPUT_DIR)
    except: pass
 
-   y_dim = 18
+   # find y dimension
+   idx_ = np.array([1, 4, 7, 10, 13, 16, 19, 22, 25, 28, 31, 34, 37, 40, 43, 46, 49])
+   idx_ = np.multiply(classes[:-1], idx_)
+   idx = [x for x in idx_ if x != 0]
+   y_dim = len(idx)
+   # account for redshift attribute
+   if classes[-1] == 1: y_dim += 1
    # placeholders for data going into the network
    z           = tf.placeholder(tf.float32, shape=(BATCH_SIZE, 100), name='z')
    y           = tf.placeholder(tf.float32, shape=(BATCH_SIZE, y_dim), name='y')

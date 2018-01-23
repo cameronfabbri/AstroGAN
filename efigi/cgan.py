@@ -72,6 +72,8 @@ if __name__ == '__main__':
    idx_ = np.multiply(classes[:-1], idx_)
    idx = [x for x in idx_ if x != 0]
    y_dim = len(idx)
+   # account for redshift attribute
+   if classes[-1] == 1: y_dim += 1
 
    # placeholders for data going into the network
    global_step = tf.Variable(0, name='global_step', trainable=False)
