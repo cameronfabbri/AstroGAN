@@ -58,6 +58,9 @@ if __name__ == '__main__':
    info_dict['SIZE']       = SIZE
    info_dict['BETA1']      = BETA1
    info_dict['BATCH_SIZE'] = BATCH_SIZE
+   info_dict['CLASSES'] = classes
+   info_dict['DATA_DIR'] = DATA_DIR
+   info_dict['CHECKPOINT_DIR'] = CHECKPOINT_DIR
    info_dict['classes'] = classes
 
    try: os.makedirs(IMAGES_DIR)
