@@ -23,7 +23,7 @@ import cv2
 import os
 from sklearn.metrics import mean_squared_error
 from math import sqrt
-
+import alexnet
 sys.path.insert(0, '../../ops/')
 sys.path.insert(0, '../../')
 sys.path.insert(0, '../')
@@ -40,7 +40,7 @@ slim = tf.contrib.slim
 '''
 def loadData(data_dir, data_type, classes):
    
-   # data must be of size 299
+   # data must be of size SIZE
    if data_type == 'real':
       train_paths = sorted(glob.glob(data_dir+'images_training_rev1/train/*.jpg'))
       train_ids   = [ntpath.basename(x.split('.')[0]) for x in train_paths]
@@ -121,7 +121,8 @@ def loadData(data_dir, data_type, classes):
       exit()
 
 if __name__ == '__main__':
-         
+
+   SIZE = 224
    parser = argparse.ArgumentParser()
    parser.add_argument('--DATA_TYPE',  required=True,help='Real or generated data',type=str)
    parser.add_argument('--DATA_DIR',   required=True,help='Data directory',type=str)
@@ -132,11 +133,15 @@ if __name__ == '__main__':
 
    CHECKPOINT_DIR = 'checkpoints/'+'DATA_TYPE_'+DATA_TYPE+'/'
 
-   images = tf.placeholder(tf.float32, shape=(1, 299, 299, 3), name='real_images')
+   images = tf.placeholder(tf.float32, shape=(1, SIZE, SIZE, 3), name='real_images')
    labels = tf.placeholder(tf.float32, shape=(1, 37), name='attributes')
 
-   with slim.arg_scope(inception_resnet_v2.inception_resnet_v2_arg_scope()):
-      logits, _ = inception_resnet_v2.inception_resnet_v2(images, num_classes=37, is_training=False)
+   #with slim.arg_scope(inception_resnet_v2.inception_resnet_v2_arg_scope()):
+   #   logits, _ = inception_resnet_v2.inception_resnet_v2(images, num_classes=37, is_training=False)
+   with slim.arg_scope(alexnet.alexnet_v2_arg_scope()):
+      logits, _ = alexnet.alexnet_v2(images, num_classes=37, is_training=True)
+      # clip logits between [0, 1] because that's the range of the labels
+      logits = tf.minimum(tf.maximum(0.0,logits), 1.0)
 
    saver = tf.train.Saver()
    init = tf.group(tf.global_variables_initializer(), tf.local_variables_initializer())
@@ -162,13 +167,13 @@ if __name__ == '__main__':
    all_pred = []
    for test_p, test_attr in tqdm(zip(test_paths, test_annots)):
       test_img  = misc.imread(test_p).astype('float32')
-      test_img  = misc.imresize(test_img, (299,299))
-      test_img  = data_ops.normalize(test_img)
+      test_img  = misc.imresize(test_img, (SIZE,SIZE))
+      test_img  = test_img/255.0
       test_img  = np.expand_dims(test_img, 0)
       test_attr = np.expand_dims(test_attr, 0)
       pred      = np.asarray(sess.run([logits], feed_dict={images:test_img}))[0]
       all_pred.append(np.squeeze(pred))
    total_err = sqrt(mean_squared_error(test_annots, np.asarray(all_pred)))
    print 'total RMSE:',total_err
-   f.write('RMSE:',str(total_err)+'\n')
+   f.write('RMSE:'+str(total_err)+'\n')
    f.close()

@@ -33,6 +33,7 @@ from nets import *
 import data_ops
 from config import classes
 import inception_resnet_v2
+import alexnet
 slim = tf.contrib.slim
 import cifarnet
 
@@ -41,7 +42,6 @@ import cifarnet
 '''
 def loadData(data_dir, data_type, classes):
 
-   # data must be of size 299
    if data_type == 'real':
       train_paths = sorted(glob.glob(data_dir+'images_training_rev1/train/*.jpg'))
       train_ids   = [ntpath.basename(x.split('.')[0]) for x in train_paths]
@@ -68,16 +68,8 @@ def loadData(data_dir, data_type, classes):
             else:
                test_attributes.append(att)
 
-      train_paths = np.asarray(train_paths)
-      train_attributes = np.asarray(train_attributes)
-      train_ids = np.asarray(train_ids)
-      test_paths = np.asarray(test_paths)
-      test_attributes = np.asarray(test_attributes)
-      test_ids = np.asarray(test_ids)
-
-      return train_paths, train_attributes, train_ids, test_paths, test_attributes, test_ids
-
-   elif data_type == 'gen':
+   # going to use both real data and generated data
+   if data_type == 'gen':
       print 'using gen data'
 
       pkl_file = open(data_dir+'data.pkl', 'rb')
@@ -92,6 +84,7 @@ def loadData(data_dir, data_type, classes):
       train_attributes = []
       test_attributes  = []
 
+      # getting the attributes for generated data.
       for tid in train_ids:
          train_attributes.append(np.squeeze(data_info[tid+'.png']))
       d = 0
@@ -104,25 +97,40 @@ def loadData(data_dir, data_type, classes):
             im_id = int(line[0])
             att = line[1:]
 
-            # remember train_ids is all str
+            # remember ids is all str
             if str(im_id) in test_ids:
                test_attributes.append(att)
+
+      # real data loading. Repetitive, but works
+      train_paths = train_paths + sorted(glob.glob('/mnt/data1/images/galaxyzoo/images_training_rev1/train/*.jpg'))
+      train_ids   = train_ids + [ntpath.basename(x.split('.')[0]) for x in train_paths]
       
-      train_paths = np.asarray(train_paths)
-      train_attributes = np.asarray(train_attributes)
-      train_ids = np.asarray(train_ids)
-      test_paths = np.asarray(test_paths)
-      test_attributes = np.asarray(test_attributes)
-      test_ids = np.asarray(test_ids)
+      d = 0
+      print 'here'
+      with open('/mnt/data1/images/galaxyzoo/training_solutions_rev1.csv', 'r') as f:
+         for line in f:
+            if d == 0:
+               d = 1
+               continue
+            line = np.asarray(line.split(',')).astype('float32')
+            im_id = int(line[0])
+            att = line[1:]
+            # remember train_ids is all str
+            if str(im_id) in train_ids:
+               train_attributes.append(att)
 
-      return train_paths, train_attributes, train_ids, test_paths, test_attributes, test_ids
-
-   else:
-      print 'data type must be \'real\' or \'gen\''
-      exit()
+   train_paths = np.asarray(train_paths)
+   train_attributes = np.asarray(train_attributes)
+   train_ids = np.asarray(train_ids)
+   test_paths = np.asarray(test_paths)
+   test_attributes = np.asarray(test_attributes)
+   test_ids = np.asarray(test_ids)
+   return train_paths, train_attributes, train_ids, test_paths, test_attributes, test_ids
 
 if __name__ == '__main__':
-         
+
+   SIZE = 224
+
    parser = argparse.ArgumentParser()
    parser.add_argument('--BATCH_SIZE', required=False,help='Batch size', type=int,default=64)
    parser.add_argument('--DATA_TYPE',  required=True,help='Real or generated data',type=str)
@@ -140,12 +148,18 @@ if __name__ == '__main__':
    except: pass
 
    global_step = tf.Variable(0, name='global_step', trainable=False)
-   images = tf.placeholder(tf.float32, shape=(BATCH_SIZE, 299, 299, 3), name='real_images')
+   images = tf.placeholder(tf.float32, shape=(BATCH_SIZE, SIZE, SIZE, 3), name='real_images')
    labels = tf.placeholder(tf.float32, shape=(BATCH_SIZE, 37), name='attributes')
 
    print 'Loading inception resnet v2...'
-   with slim.arg_scope(inception_resnet_v2.inception_resnet_v2_arg_scope()):
-      logits, _ = inception_resnet_v2.inception_resnet_v2(images, num_classes=37, is_training=True)
+   # clip logits between [0, 1] because that's the range of the labels
+   #with slim.arg_scope(inception_resnet_v2.inception_resnet_v2_arg_scope()):
+   #   logits, _ = inception_resnet_v2.inception_resnet_v2(images, num_classes=37, is_training=True)
+   #   logits = tf.min(tf.max(0,logits), 1)
+   with slim.arg_scope(alexnet.alexnet_v2_arg_scope()):
+      logits, _ = alexnet.alexnet_v2(images, num_classes=37, is_training=True)
+      # clip logits between [0, 1] because that's the range of the labels
+      logits = tf.minimum(tf.maximum(0.0,logits), 1.0)
    print 'Done.'
 
    loss = tf.reduce_mean(tf.nn.l2_loss(logits-labels))
@@ -190,15 +204,25 @@ if __name__ == '__main__':
       batch_paths  = train_images[idx]
 
       # create batch images
-      batch_images = np.empty((BATCH_SIZE, 299, 299, 3), dtype=np.float32)
+      batch_images = np.empty((BATCH_SIZE, SIZE, SIZE, 3), dtype=np.float32)
 
       i = 0
       for p in batch_paths:
          img = misc.imread(p).astype('float32')
-         img = misc.imresize(img, (299,299))
-         img = data_ops.normalize(img)
+         img = misc.imresize(img, (SIZE,SIZE))
+         img = img/255.0
          batch_images[i, ...] = img
          i += 1
+         
+      # randomly flip batch
+      r = random.random()
+      # flip image left right
+      if r < 0.5:
+         batch_images = np.fliplr(batch_images)
+      r = random.random()
+      # flip image up down
+      if r < 0.5:
+         batch_images = np.flipud(batch_images)
 
       _, loss_, summary = sess.run([train_op, loss, merged_summary_op], feed_dict={images:batch_images, labels:batch_y})
       
@@ -220,8 +244,8 @@ if __name__ == '__main__':
          i = 0
          for p in batch_paths:
             img = misc.imread(p).astype('float32')
-            img = misc.imresize(img, (299,299))
-            img = data_ops.normalize(img)
+            img = misc.imresize(img, (SIZE,SIZE))
+            img = img/255.0
             batch_images[i, ...] = img
             i += 1
 
@@ -232,7 +256,6 @@ if __name__ == '__main__':
          for r,p in zip(batch_y, preds):
             # root mean squared error
             batch_err = batch_err+sqrt(mean_squared_error(r, p))
-            #batch_err = batch_err + np.linalg.norm(r-p)
          batch_err = float(batch_err)/float(BATCH_SIZE)
          f.write(str(step)+','+str(batch_err)+'\n')
          f.close()
