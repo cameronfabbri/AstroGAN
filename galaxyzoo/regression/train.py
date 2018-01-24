@@ -21,6 +21,8 @@ import glob
 import sys
 import cv2
 import os
+from sklearn.metrics import mean_squared_error
+from math import sqrt
 
 sys.path.insert(0, '../../ops/')
 sys.path.insert(0, '../../')
@@ -46,13 +48,6 @@ def loadData(data_dir, data_type, classes):
       
       test_paths = sorted(glob.glob(data_dir+'images_training_rev1/test/*.jpg'))
       test_ids   = [ntpath.basename(x.split('.')[0]) for x in test_paths]
-
-      # put ids with image path just to be sure we get the correct image. Slow but oh well, only done once
-      #id_dict = {}
-      #for img, id_ in zip(train_paths, train_ids):
-      #   id_dict[int(id_)] = img
-      #for img, id_ in zip(test_paths, test_ids):
-      #   id_dict[int(id_)] = img
 
       train_attributes = []
       test_attributes  = []
@@ -85,6 +80,46 @@ def loadData(data_dir, data_type, classes):
    elif data_type == 'gen':
       print 'using gen data'
 
+      pkl_file = open(data_dir+'data.pkl', 'rb')
+      data_info = pickle.load(pkl_file)
+
+      train_paths = sorted(glob.glob(data_dir+'*.png'))
+      train_ids   = [ntpath.basename(x.split('.')[0]) for x in train_paths]
+      
+      test_paths = sorted(glob.glob('/mnt/data1/images/galaxyzoo/images_training_rev1/test/*.jpg'))
+      test_ids   = [ntpath.basename(x.split('.')[0]) for x in test_paths]
+      
+      train_attributes = []
+      test_attributes  = []
+
+      for tid in train_ids:
+         train_attributes.append(np.squeeze(data_info[tid+'.png']))
+      d = 0
+      with open('/mnt/data1/images/galaxyzoo/training_solutions_rev1.csv', 'r') as f:
+         for line in f:
+            if d == 0:
+               d = 1
+               continue
+            line = np.asarray(line.split(',')).astype('float32')
+            im_id = int(line[0])
+            att = line[1:]
+
+            # remember train_ids is all str
+            if str(im_id) in test_ids:
+               test_attributes.append(att)
+      
+      train_paths = np.asarray(train_paths)
+      train_attributes = np.asarray(train_attributes)
+      train_ids = np.asarray(train_ids)
+      test_paths = np.asarray(test_paths)
+      test_attributes = np.asarray(test_attributes)
+      test_ids = np.asarray(test_ids)
+
+      return train_paths, train_attributes, train_ids, test_paths, test_attributes, test_ids
+
+   else:
+      print 'data type must be \'real\' or \'gen\''
+      exit()
 
 if __name__ == '__main__':
          
@@ -180,14 +215,24 @@ if __name__ == '__main__':
 
          idx          = np.random.choice(np.arange(test_len), BATCH_SIZE, replace=False)
          batch_y      = test_annots[idx]
-         batch_images = test_images[idx]
+         batch_paths  = test_images[idx]
+      
+         i = 0
+         for p in batch_paths:
+            img = misc.imread(p).astype('float32')
+            img = misc.imresize(img, (299,299))
+            img = data_ops.normalize(img)
+            batch_images[i, ...] = img
+            i += 1
 
          preds = np.asarray(sess.run([logits], feed_dict={images:batch_images, labels:batch_y}))[0]
 
          f = open(CHECKPOINT_DIR+'testing.txt', 'a')
          batch_err = 0
          for r,p in zip(batch_y, preds):
-            batch_err = batch_err + np.linalg.norm(r-p)
+            # root mean squared error
+            batch_err = batch_err+sqrt(mean_squared_error(r, p))
+            #batch_err = batch_err + np.linalg.norm(r-p)
          batch_err = float(batch_err)/float(BATCH_SIZE)
          f.write(str(step)+','+str(batch_err)+'\n')
          f.close()

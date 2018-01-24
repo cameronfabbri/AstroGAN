@@ -17,9 +17,12 @@ import argparse
 import random
 import ntpath
 import time
+import glob
 import sys
 import cv2
 import os
+from sklearn.metrics import mean_squared_error
+from math import sqrt
 
 sys.path.insert(0, '../../ops/')
 sys.path.insert(0, '../../')
@@ -36,14 +39,86 @@ slim = tf.contrib.slim
    Loads the data specified, either generated or real, and also with/without redshift
 '''
 def loadData(data_dir, data_type, classes):
-
+   
    # data must be of size 299
    if data_type == 'real':
-      train_images, train_annots, train_ids, test_images, test_annots, test_ids = data_ops.load_zoo(DATA_DIR, 64)
-      return train_images, train_annots, train_ids, test_images, test_annots, test_ids
+      train_paths = sorted(glob.glob(data_dir+'images_training_rev1/train/*.jpg'))
+      train_ids   = [ntpath.basename(x.split('.')[0]) for x in train_paths]
+      
+      test_paths = sorted(glob.glob(data_dir+'images_training_rev1/test/*.jpg'))
+      test_ids   = [ntpath.basename(x.split('.')[0]) for x in test_paths]
+
+      train_attributes = []
+      test_attributes  = []
+
+      d = 0
+      with open(data_dir+'training_solutions_rev1.csv', 'r') as f:
+         for line in f:
+            if d == 0:
+               d = 1
+               continue
+            line = np.asarray(line.split(',')).astype('float32')
+            im_id = int(line[0])
+            att = line[1:]
+
+            # remember train_ids is all str
+            if str(im_id) in train_ids:
+               train_attributes.append(att)
+            else:
+               test_attributes.append(att)
+
+      train_paths = np.asarray(train_paths)
+      train_attributes = np.asarray(train_attributes)
+      train_ids = np.asarray(train_ids)
+      test_paths = np.asarray(test_paths)
+      test_attributes = np.asarray(test_attributes)
+      test_ids = np.asarray(test_ids)
+
+      return train_paths, train_attributes, train_ids, test_paths, test_attributes, test_ids
+
    elif data_type == 'gen':
       print 'using gen data'
 
+      pkl_file = open(data_dir+'data.pkl', 'rb')
+      data_info = pickle.load(pkl_file)
+
+      train_paths = sorted(glob.glob(data_dir+'*.png'))
+      train_ids   = [ntpath.basename(x.split('.')[0]) for x in train_paths]
+      
+      test_paths = sorted(glob.glob('/mnt/data1/images/galaxyzoo/images_training_rev1/test/*.jpg'))
+      test_ids   = [ntpath.basename(x.split('.')[0]) for x in test_paths]
+      
+      train_attributes = []
+      test_attributes  = []
+
+      for tid in train_ids:
+         train_attributes.append(np.squeeze(data_info[tid+'.png']))
+      d = 0
+      with open('/mnt/data1/images/galaxyzoo/training_solutions_rev1.csv', 'r') as f:
+         for line in f:
+            if d == 0:
+               d = 1
+               continue
+            line = np.asarray(line.split(',')).astype('float32')
+            im_id = int(line[0])
+            att = line[1:]
+
+            # remember train_ids is all str
+            if str(im_id) in test_ids:
+               test_attributes.append(att)
+      
+      train_paths = np.asarray(train_paths)
+      train_attributes = np.asarray(train_attributes)
+      train_ids = np.asarray(train_ids)
+      test_paths = np.asarray(test_paths)
+      test_attributes = np.asarray(test_attributes)
+      test_ids = np.asarray(test_ids)
+
+      return train_paths, train_attributes, train_ids, test_paths, test_attributes, test_ids
+
+   else:
+      print 'data type must be \'real\' or \'gen\''
+      exit()
 
 if __name__ == '__main__':
          
@@ -52,21 +127,16 @@ if __name__ == '__main__':
    parser.add_argument('--DATA_DIR',   required=True,help='Data directory',type=str)
    a = parser.parse_args()
 
-   BATCH_SIZE     = a.BATCH_SIZE
    DATA_TYPE      = a.DATA_TYPE
    DATA_DIR       = a.DATA_DIR
-   EPOCHS         = a.EPOCHS
 
    CHECKPOINT_DIR = 'checkpoints/'+'DATA_TYPE_'+DATA_TYPE+'/'
 
-   #images = tf.placeholder(tf.float32, shape=(BATCH_SIZE, 299, 299, 3), name='real_images')
-   images = tf.placeholder(tf.float32, shape=(BATCH_SIZE, 64, 64, 3), name='real_images')
-   labels = tf.placeholder(tf.float32, shape=(BATCH_SIZE, 18), name='attributes')
+   images = tf.placeholder(tf.float32, shape=(1, 299, 299, 3), name='real_images')
+   labels = tf.placeholder(tf.float32, shape=(1, 37), name='attributes')
 
-   #with slim.arg_scope(inception_resnet_v2.inception_resnet_v2_arg_scope()):
-   #   logits, _ = inception_resnet_v2.inception_resnet_v2(images, num_classes=37, is_training=False)
-   with slim.arg_scope(cifarnet.cifarnet_arg_scope()):
-      logits, _ = cifarnet.cifarnet(images, num_classes=37, is_training=False)
+   with slim.arg_scope(inception_resnet_v2.inception_resnet_v2_arg_scope()):
+      logits, _ = inception_resnet_v2.inception_resnet_v2(images, num_classes=37, is_training=False)
 
    saver = tf.train.Saver()
    init = tf.group(tf.global_variables_initializer(), tf.local_variables_initializer())
@@ -83,22 +153,22 @@ if __name__ == '__main__':
          print 'Could not restore model'
          pass
 
-   train_images, train_annots, train_ids, test_images, test_annots, test_ids = loadData(DATA_DIR, DATA_TYPE, classes)
+   train_paths, train_annots, train_ids, test_paths, test_annots, test_ids = loadData(DATA_DIR, DATA_TYPE, classes)
 
    train_len = len(train_annots)
    test_len  = len(test_annots)
-   step = sess.run(global_step)
 
-   for test_img, test_attr in zip(test_images, test_annots):
-
+   f = open(CHECKPOINT_DIR+'evaluation.txt', 'a')
+   all_pred = []
+   for test_p, test_attr in tqdm(zip(test_paths, test_annots)):
+      test_img  = misc.imread(test_p).astype('float32')
+      test_img  = misc.imresize(test_img, (299,299))
+      test_img  = data_ops.normalize(test_img)
       test_img  = np.expand_dims(test_img, 0)
       test_attr = np.expand_dims(test_attr, 0)
-      preds     = np.asarray(sess.run([logits], feed_dict={images:test_img, labels:test_attr}))[0]
-
-      f = open(CHECKPOINT_DIR+'evaluation.txt', 'a')
-      batch_err = 0
-      for r,p in zip(batch_y, preds):
-         batch_err = batch_err + np.linalg.norm(r-p)
-      batch_err = float(batch_err)/float(BATCH_SIZE)
-      f.write(str(step)+','+str(batch_err)+'\n')
-      f.close()
+      pred      = np.asarray(sess.run([logits], feed_dict={images:test_img}))[0]
+      all_pred.append(np.squeeze(pred))
+   total_err = sqrt(mean_squared_error(test_annots, np.asarray(all_pred)))
+   print 'total RMSE:',total_err
+   f.write('RMSE:',str(total_err)+'\n')
+   f.close()
