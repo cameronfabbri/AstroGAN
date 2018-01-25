@@ -138,7 +138,7 @@ if __name__ == '__main__':
    use_both  = bool(info_dict['USE_BOTH'])
    NETWORK   = info_dict['NETWORK']
 
-   CHECKPOINT_DIR = 'checkpoints/'+'DATA_TYPE_'+DATA_TYPE+'/'
+   CHECKPOINT_DIR = 'checkpoints/'+'DATA_TYPE_'+DATA_TYPE+'/NETWORK_'+NETWORK+'/USE_BOTH_'+str(use_both)+'/'
 
    images = tf.placeholder(tf.float32, shape=(1, SIZE, SIZE, 3), name='real_images')
    labels = tf.placeholder(tf.float32, shape=(1, 37), name='attributes')
