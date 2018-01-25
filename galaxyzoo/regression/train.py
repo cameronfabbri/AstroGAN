@@ -154,12 +154,23 @@ if __name__ == '__main__':
    CHECKPOINT_DIR = 'checkpoints/'+'DATA_TYPE_'+DATA_TYPE+'/NETWORK_'+NETWORK+'/USE_BOTH_'+str(use_both)+'/'
    try: os.makedirs(CHECKPOINT_DIR)
    except: pass
+   
+   info_dict = {}
+   info_dict['BATCH_SIZE'] = BATCH_SIZE
+   info_dict['DATA_TYPE']  = DATA_TYPE
+   info_dict['DATA_DIR']   = DATA_DIR
+   info_dict['USE_BOTH']   = use_both
+   info_dict['NETWORK']    = NETWORK
+   info_dict['EPOCHS']     = EPOCHS
+   exp_pkl = open(CHECKPOINT_DIR+'info.pkl', 'wb')
+   data = pickle.dumps(info_dict)
+   exp_pkl.write(data)
+   exp_pkl.close()
 
    global_step = tf.Variable(0, name='global_step', trainable=False)
    images = tf.placeholder(tf.float32, shape=(BATCH_SIZE, SIZE, SIZE, 3), name='real_images')
    labels = tf.placeholder(tf.float32, shape=(BATCH_SIZE, 37), name='attributes')
 
-   print 'Loading inception resnet v2...'
    # clip logits between [0, 1] because that's the range of the labels
    if NETWORK == 'inception':
       print 'Using inception'
