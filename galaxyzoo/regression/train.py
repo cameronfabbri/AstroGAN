@@ -35,7 +35,6 @@ from config import classes
 import inception_resnet_v2
 import alexnet
 slim = tf.contrib.slim
-import cifarnet
 
 '''
    Loads the data specified, either generated or real, and also with/without redshift
@@ -77,7 +76,7 @@ def loadData(data_dir, data_type, use_both, classes):
 
       train_paths = sorted(glob.glob(data_dir+'*.png'))
       train_ids   = [ntpath.basename(x.split('.')[0]) for x in train_paths]
-      
+
       test_paths = sorted(glob.glob('/mnt/data1/images/galaxyzoo/images_training_rev1/test/*.jpg'))
       test_ids   = [ntpath.basename(x.split('.')[0]) for x in test_paths]
       
@@ -171,6 +170,8 @@ if __name__ == '__main__':
    images = tf.placeholder(tf.float32, shape=(BATCH_SIZE, SIZE, SIZE, 3), name='real_images')
    labels = tf.placeholder(tf.float32, shape=(BATCH_SIZE, 37), name='attributes')
 
+   LR = tf.placeholder(tf.float32, name='learning_rate')
+
    # clip logits between [0, 1] because that's the range of the labels
    if NETWORK == 'inception':
       print 'Using inception'
@@ -190,7 +191,7 @@ if __name__ == '__main__':
    summary_writer = tf.summary.FileWriter(CHECKPOINT_DIR+'/'+'logs/', graph=tf.get_default_graph())
    merged_summary_op = tf.summary.merge_all()
    
-   train_op = tf.train.AdamOptimizer(learning_rate=1e-4).minimize(loss, global_step=global_step)
+   train_op = tf.train.AdamOptimizer(learning_rate=LR).minimize(loss, global_step=global_step)
    
    saver = tf.train.Saver(max_to_keep=1)
    init = tf.group(tf.global_variables_initializer(), tf.local_variables_initializer())
@@ -217,8 +218,12 @@ if __name__ == '__main__':
 
    epoch_num = step/(train_len/BATCH_SIZE)
 
+   learning_rate = 0.04
    while epoch_num < EPOCHS:
-   
+
+      if epoch > 2 and epoch < 5: learning_rate = learning_rate/10.0
+      if epoch > 5 learning_rate = learning_rate/10.0
+
       epoch_num = step/(train_len/BATCH_SIZE)
 
       idx          = np.random.choice(np.arange(train_len), BATCH_SIZE, replace=False)
@@ -232,7 +237,7 @@ if __name__ == '__main__':
       for p in batch_paths:
          img = misc.imread(p).astype('float32')
          img = misc.imresize(img, (SIZE,SIZE))
-         img = img/255.0
+         #img = img/255.0
          batch_images[i, ...] = img
          i += 1
          
@@ -246,7 +251,7 @@ if __name__ == '__main__':
       if r < 0.5:
          batch_images = np.flipud(batch_images)
 
-      _, loss_, summary = sess.run([train_op, loss, merged_summary_op], feed_dict={images:batch_images, labels:batch_y})
+      _, loss_, summary = sess.run([train_op, loss, merged_summary_op], feed_dict={images:batch_images, labels:batch_y, LR:learning_rate})
       
       summary_writer.add_summary(summary, step)
 
@@ -267,7 +272,7 @@ if __name__ == '__main__':
          for p in batch_paths:
             img = misc.imread(p).astype('float32')
             img = misc.imresize(img, (SIZE,SIZE))
-            img = img/255.0
+            #img = img/255.0
             batch_images[i, ...] = img
             i += 1
 
