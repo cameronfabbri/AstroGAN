@@ -40,7 +40,7 @@ import cifarnet
 '''
    Loads the data specified, either generated or real, and also with/without redshift
 '''
-def loadData(data_dir, data_type, classes):
+def loadData(data_dir, data_type, use_both, classes):
 
    if data_type == 'real':
       train_paths = sorted(glob.glob(data_dir+'images_training_rev1/train/*.jpg'))
@@ -101,23 +101,24 @@ def loadData(data_dir, data_type, classes):
             if str(im_id) in test_ids:
                test_attributes.append(att)
 
-      # real data loading. Repetitive, but works
-      train_paths = train_paths + sorted(glob.glob('/mnt/data1/images/galaxyzoo/images_training_rev1/train/*.jpg'))
-      train_ids   = train_ids + [ntpath.basename(x.split('.')[0]) for x in train_paths]
-      
-      d = 0
-      print 'here'
-      with open('/mnt/data1/images/galaxyzoo/training_solutions_rev1.csv', 'r') as f:
-         for line in f:
-            if d == 0:
-               d = 1
-               continue
-            line = np.asarray(line.split(',')).astype('float32')
-            im_id = int(line[0])
-            att = line[1:]
-            # remember train_ids is all str
-            if str(im_id) in train_ids:
-               train_attributes.append(att)
+      if use_both == True:
+         print 'Using real data along with gen'
+         # real data loading. Repetitive, but works
+         train_paths = train_paths + sorted(glob.glob('/mnt/data1/images/galaxyzoo/images_training_rev1/train/*.jpg'))
+         train_ids   = train_ids + [ntpath.basename(x.split('.')[0]) for x in train_paths]
+         
+         d = 0
+         with open('/mnt/data1/images/galaxyzoo/training_solutions_rev1.csv', 'r') as f:
+            for line in f:
+               if d == 0:
+                  d = 1
+                  continue
+               line = np.asarray(line.split(',')).astype('float32')
+               im_id = int(line[0])
+               att = line[1:]
+               # remember train_ids is all str
+               if str(im_id) in train_ids:
+                  train_attributes.append(att)
 
    train_paths = np.asarray(train_paths)
    train_attributes = np.asarray(train_attributes)
@@ -135,15 +136,22 @@ if __name__ == '__main__':
    parser.add_argument('--BATCH_SIZE', required=False,help='Batch size', type=int,default=64)
    parser.add_argument('--DATA_TYPE',  required=True,help='Real or generated data',type=str)
    parser.add_argument('--DATA_DIR',   required=True,help='Data directory',type=str)
+   parser.add_argument('--NETWORK',    required=True,help='Which network',type=str)
+   parser.add_argument('--USE_BOTH',   required=True,help='Use both real and gen',type=int)
    parser.add_argument('--EPOCHS',     required=False,help='Number of epochs',type=int,default=100)
    a = parser.parse_args()
 
    BATCH_SIZE     = a.BATCH_SIZE
    DATA_TYPE      = a.DATA_TYPE
    DATA_DIR       = a.DATA_DIR
+   NETWORK        = a.NETWORK
    EPOCHS         = a.EPOCHS
+   use_both       = bool(a.USE_BOTH)
 
-   CHECKPOINT_DIR = 'checkpoints/'+'DATA_TYPE_'+DATA_TYPE+'/'
+   # using both only applies to when using gen
+   if DATA_TYPE == 'real': use_both = bool(0)
+
+   CHECKPOINT_DIR = 'checkpoints/'+'DATA_TYPE_'+DATA_TYPE+'/NETWORK_'+NETWORK+'/USE_BOTH_'+str(use_both)+'/'
    try: os.makedirs(CHECKPOINT_DIR)
    except: pass
 
@@ -153,13 +161,16 @@ if __name__ == '__main__':
 
    print 'Loading inception resnet v2...'
    # clip logits between [0, 1] because that's the range of the labels
-   #with slim.arg_scope(inception_resnet_v2.inception_resnet_v2_arg_scope()):
-   #   logits, _ = inception_resnet_v2.inception_resnet_v2(images, num_classes=37, is_training=True)
-   #   logits = tf.min(tf.max(0,logits), 1)
-   with slim.arg_scope(alexnet.alexnet_v2_arg_scope()):
-      logits, _ = alexnet.alexnet_v2(images, num_classes=37, is_training=True)
-      # clip logits between [0, 1] because that's the range of the labels
-      logits = tf.minimum(tf.maximum(0.0,logits), 1.0)
+   if NETWORK == 'inception':
+      print 'Using inception'
+      with slim.arg_scope(inception_resnet_v2.inception_resnet_v2_arg_scope()):
+         logits, _ = inception_resnet_v2.inception_resnet_v2(images, num_classes=37, is_training=True)
+         logits = tf.minimum(tf.maximum(0.0,logits), 1.0)
+   if NETWORK == 'alexnet':
+      print 'Using alexnet'
+      with slim.arg_scope(alexnet.alexnet_v2_arg_scope()):
+         logits, _ = alexnet.alexnet_v2(images, num_classes=37, is_training=True)
+         logits = tf.minimum(tf.maximum(0.0,logits), 1.0)
    print 'Done.'
 
    loss = tf.reduce_mean(tf.nn.l2_loss(logits-labels))
@@ -186,7 +197,7 @@ if __name__ == '__main__':
          pass
 
    print 'Loading data...'
-   train_images, train_annots, train_ids, test_images, test_annots, test_ids = loadData(DATA_DIR, DATA_TYPE, classes)
+   train_images, train_annots, train_ids, test_images, test_annots, test_ids = loadData(DATA_DIR, DATA_TYPE, use_both, classes)
    print 'Done.'
 
    train_len = len(train_annots)
