@@ -219,7 +219,7 @@ if __name__ == '__main__':
             #r_img = np.reshape(img, (SIZE, SIZE, -1))
             misc.imsave(IMAGES_DIR+'step_'+str(step)+'_real.png', r_img)
             misc.imsave(IMAGES_DIR+'step_'+str(step)+'_gen.png', g_img)
-            misc.imsave(IMAGES_DIR+'step_'+str(step)+'_orig.png', g_img)
+            misc.imsave(IMAGES_DIR+'step_'+str(step)+'_orig.png', s_img)
             num += 1
             if num == 5: break
    saver.save(sess, CHECKPOINT_DIR+'checkpoint-'+str(step))
