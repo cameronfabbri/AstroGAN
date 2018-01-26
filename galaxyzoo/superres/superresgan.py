@@ -71,7 +71,7 @@ if __name__ == '__main__':
    errG = tf.reduce_mean(errD_fake)
 
    # also add in L1 loss to errG
-   errG = errG + tf.reduce_mean(tf.abs(real_images-gen_images))
+   errG = errG + 100.0*tf.reduce_mean(tf.abs(real_images-gen_images))
 
    # gradient penalty
    epsilon = tf.random_uniform([], 0.0, 1.0)
@@ -208,10 +208,10 @@ if __name__ == '__main__':
          gen_imgs = np.squeeze(np.asarray(sess.run([gen_images], feed_dict={small_images:batch_images})))
 
          num = 0
-         for r_img,g_img in zip(r_images, gen_imgs):
-            #r_img = (r_img+1.)
-            #r_img *= 127.5
-            #r_img = np.clip(r_img, 0, 255).astype(np.uint8)
+         for r_img,g_img,s_img in zip(r_images, gen_imgs, batch_images):
+            s_img = (s_img+1.)
+            s_img *= 127.5
+            s_img = np.clip(s_img, 0, 255).astype(np.uint8)
 
             g_img = (g_img+1.)
             g_img *= 127.5
@@ -219,6 +219,7 @@ if __name__ == '__main__':
             #r_img = np.reshape(img, (SIZE, SIZE, -1))
             misc.imsave(IMAGES_DIR+'step_'+str(step)+'_real.png', r_img)
             misc.imsave(IMAGES_DIR+'step_'+str(step)+'_gen.png', g_img)
+            misc.imsave(IMAGES_DIR+'step_'+str(step)+'_orig.png', g_img)
             num += 1
             if num == 5: break
    saver.save(sess, CHECKPOINT_DIR+'checkpoint-'+str(step))
