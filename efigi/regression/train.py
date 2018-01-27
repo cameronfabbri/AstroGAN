@@ -210,6 +210,7 @@ if __name__ == '__main__':
 
    epoch_num = step/(train_len/BATCH_SIZE)
 
+   learning_rate = 1e-4
    while epoch_num < EPOCHS:
 
       epoch_num = step/(train_len/BATCH_SIZE)
