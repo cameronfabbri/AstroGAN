@@ -25,6 +25,8 @@ import os
 sys.path.insert(0, '../../ops/')
 sys.path.insert(0, '../../')
 sys.path.insert(0, '../')
+from sklearn.metrics import mean_squared_error
+from math import sqrt
 
 from tf_ops import *
 from nets import *
