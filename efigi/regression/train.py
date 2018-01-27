@@ -149,7 +149,9 @@ def loadData(data_dir, data_type, use_both, classes):
 
 
 if __name__ == '__main__':
-         
+
+   SIZE = 224
+
    parser = argparse.ArgumentParser()
    parser.add_argument('--BATCH_SIZE', required=False,help='Batch size', type=int,default=64)
    parser.add_argument('--DATA_TYPE',  required=True,help='Real or generated data',type=str)
