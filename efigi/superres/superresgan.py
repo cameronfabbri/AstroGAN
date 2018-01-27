@@ -132,8 +132,8 @@ if __name__ == '__main__':
    step = sess.run(global_step)
    
    print 'Loading data...'
-   train_paths = np.asarray(sorted(glob.glob(DATA_DIR+'/train/*.jpg')))
-   test_paths  = np.asarray(sorted(glob.glob(DATA_DIR+'/test/*.jpg')))
+   train_paths = np.asarray(sorted(glob.glob(DATA_DIR+'/train/*.png')))
+   test_paths  = np.asarray(sorted(glob.glob(DATA_DIR+'/test/*.png')))
 
    train_len = len(train_paths)
    test_len  = len(test_paths)
