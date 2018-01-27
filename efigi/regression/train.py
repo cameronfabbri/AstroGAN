@@ -175,6 +175,7 @@ if __name__ == '__main__':
    global_step = tf.Variable(0, name='global_step', trainable=False)
    images = tf.placeholder(tf.float32, shape=(BATCH_SIZE, 299, 299, 3), name='real_images')
    labels = tf.placeholder(tf.float32, shape=(BATCH_SIZE, 18), name='attributes')
+   LR = tf.placeholder(tf.float32, name='learning_rate')
 
    with slim.arg_scope(inception_resnet_v2.inception_resnet_v2_arg_scope()):
       logits, _ = inception_resnet_v2.inception_resnet_v2(images, num_classes=18, is_training=False)
