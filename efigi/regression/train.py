@@ -139,6 +139,8 @@ if __name__ == '__main__':
    parser.add_argument('--BATCH_SIZE', required=False,help='Batch size', type=int,default=64)
    parser.add_argument('--DATA_TYPE',  required=True,help='Real or generated data',type=str)
    parser.add_argument('--DATA_DIR',   required=True,help='Data directory',type=str)
+   parser.add_argument('--USE_BOTH',   required=True,help='Use both real and gen',type=int)
+   parser.add_argument('--NETWORK',    required=True,help='Which network',type=str)
    parser.add_argument('--EPOCHS',   required=False,help='Number of epochs',type=int,default=100)
    a = parser.parse_args()
 
@@ -146,6 +148,8 @@ if __name__ == '__main__':
    DATA_TYPE      = a.DATA_TYPE
    DATA_DIR       = a.DATA_DIR
    EPOCHS         = a.EPOCHS
+   USE_BOTH       = a.USE_BOTH
+   use_both       = bool(a.USE_BOTH)
 
    CHECKPOINT_DIR = 'checkpoints/'+'DATA_TYPE_'+DATA_TYPE+'/'
    try: os.makedirs(CHECKPOINT_DIR)
@@ -181,7 +185,7 @@ if __name__ == '__main__':
          print 'Could not restore model'
          pass
 
-   train_images, train_annots, train_ids, test_images, test_annots, test_ids = loadData(data_dir, data_type, use_both, classes)
+   train_images, train_annots, train_ids, test_images, test_annots, test_ids = loadData(DATA_DIR, DATA_TYPE, use_both, classes)
 
    train_len = len(train_annots)
    test_len  = len(test_annots)
