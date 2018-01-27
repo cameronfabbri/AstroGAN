@@ -38,15 +38,93 @@ slim = tf.contrib.slim
 '''
    Loads the data specified, either generated or real, and also with/without redshift
 '''
-def loadData(data_dir, data_type, classes):
+def loadData(data_dir, data_type, use_both, classes):
 
-   # data must be of size 299
    if data_type == 'real':
-      train_images, train_annots, train_ids, test_images, test_annots, test_ids = data_ops.load_efigi(DATA_DIR, classes, 299)
-      return train_images, train_annots, train_ids, test_images, test_annots, test_ids
-   elif data_type == 'gen':
+      train_paths = sorted(glob.glob(data_dir+'train/*.png'))
+      train_ids   = [ntpath.basename(x.split('.')[0]) for x in train_paths]
+      
+      test_paths = sorted(glob.glob(data_dir+'/test/*.png'))
+      test_ids   = [ntpath.basename(x.split('.')[0]) for x in test_paths]
+
+      train_attributes = []
+      test_attributes  = []
+
+      d = 0
+      with open(data_dir+'training_solutions_rev1.csv', 'r') as f:
+         for line in f:
+            if d == 0:
+               d = 1
+               continue
+            line = np.asarray(line.split(',')).astype('float32')
+            im_id = int(line[0])
+            att = line[1:]
+
+            # remember train_ids is all str
+            if str(im_id) in train_ids:
+               train_attributes.append(att)
+            else:
+               test_attributes.append(att)
+
+   # going to use both real data and generated data
+   if data_type == 'gen':
       print 'using gen data'
 
+      pkl_file = open(data_dir+'data.pkl', 'rb')
+      data_info = pickle.load(pkl_file)
+
+      train_paths = sorted(glob.glob(data_dir+'*.png'))
+      train_ids   = [ntpath.basename(x.split('.')[0]) for x in train_paths]
+
+      test_paths = sorted(glob.glob('/mnt/data1/images/galaxyzoo/images_training_rev1/test/*.jpg'))
+      test_ids   = [ntpath.basename(x.split('.')[0]) for x in test_paths]
+      
+      train_attributes = []
+      test_attributes  = []
+
+      # getting the attributes for generated data.
+      for tid in train_ids:
+         train_attributes.append(np.squeeze(data_info[tid+'.png']))
+      d = 0
+      with open('/mnt/data1/images/galaxyzoo/training_solutions_rev1.csv', 'r') as f:
+         for line in f:
+            if d == 0:
+               d = 1
+               continue
+            line = np.asarray(line.split(',')).astype('float32')
+            im_id = int(line[0])
+            att = line[1:]
+
+            # remember ids is all str
+            if str(im_id) in test_ids:
+               test_attributes.append(att)
+
+      if use_both == True:
+         print 'Using real data along with gen'
+         # real data loading. Repetitive, but works
+         train_paths = train_paths + sorted(glob.glob('/mnt/data1/images/galaxyzoo/images_training_rev1/train/*.jpg'))
+         train_ids   = train_ids + [ntpath.basename(x.split('.')[0]) for x in train_paths]
+         
+         d = 0
+         with open('/mnt/data1/images/galaxyzoo/training_solutions_rev1.csv', 'r') as f:
+            for line in f:
+               if d == 0:
+                  d = 1
+                  continue
+               line = np.asarray(line.split(',')).astype('float32')
+               im_id = int(line[0])
+               att = line[1:]
+               # remember train_ids is all str
+               if str(im_id) in train_ids:
+                  train_attributes.append(att)
+
+   train_paths = np.asarray(train_paths)
+   train_attributes = np.asarray(train_attributes)
+   train_ids = np.asarray(train_ids)
+   test_paths = np.asarray(test_paths)
+   test_attributes = np.asarray(test_attributes)
+   test_ids = np.asarray(test_ids)
+   return train_paths, train_attributes, train_ids, test_paths, test_attributes, test_ids
 
 
 
