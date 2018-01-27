@@ -49,28 +49,44 @@ def loadData(data_dir, data_type, use_both, classes):
       test_paths = sorted(glob.glob(data_dir+'images/test/*.png'))
       test_ids   = [ntpath.basename(x.split('.')[0]) for x in test_paths]
 
-      print train_ids[0]
-      print train_paths[0]
-      exit()
-
       train_attributes = []
       test_attributes  = []
-
-      d = 0
-      with open(data_dir+'training_solutions_rev1.csv', 'r') as f:
+   
+      redict = {}
+      d=0
+      with open(data_dir+'EFIGI_coord_redshift.txt','r') as f:
          for line in f:
-            if d == 0:
-               d = 1
+            if d==0:
+               d=1
                continue
-            line = np.asarray(line.split(',')).astype('float32')
-            im_id = int(line[0])
-            att = line[1:]
+            line = line.rstrip().split()
+            galaxy_id = line[0]
+            redshift  = float(line[9])
+            if redshift < 0: continue # redshift missing, so has a value of -99.99 we don't want
+            redict[galaxy_id] = redshift
 
-            # remember train_ids is all str
-            if str(im_id) in train_ids:
-               train_attributes.append(att)
-            else:
-               test_attributes.append(att)
+      # grab these ones from the file, then multiply by the mask that comes in (classes variable)
+      idx_ = np.array([1, 4, 7, 10, 13, 16, 19, 22, 25, 28, 31, 34, 37, 40, 43, 46, 49])
+      idx_ = np.multiply(classes[:-1], idx_)
+      idx = [x for x in idx_ if x != 0]
+      print idx
+      exit()
+      # og
+      #idx = np.array([7, 10, 31, 49])
+
+      with open(data_dir+'EFIGI_attributes.txt', 'r') as f:
+         for line in f:
+            line     = line.rstrip().split()
+            galaxy_id = line[0]
+            line     = np.asarray(line[1:])
+            line     = line[idx].astype('float32')
+            # add in the redshift attribute
+            try: line = np.append(line, redict[galaxy_id])
+            except: continue # don't use this one in training if no redshift (about 400 total)
+            if galaxy_id in train_ids:
+               train_attributes.append(line)
+            elif galaxy_id in test_ids:
+               test_attributes.append(line)
 
    # going to use both real data and generated data
    if data_type == 'gen':
