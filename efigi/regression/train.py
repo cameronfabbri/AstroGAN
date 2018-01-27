@@ -69,8 +69,6 @@ def loadData(data_dir, data_type, use_both, classes):
       idx_ = np.array([1, 4, 7, 10, 13, 16, 19, 22, 25, 28, 31, 34, 37, 40, 43, 46, 49])
       idx_ = np.multiply(classes[:-1], idx_)
       idx = [x for x in idx_ if x != 0]
-      print idx
-      exit()
       # og
       #idx = np.array([7, 10, 31, 49])
 
@@ -140,6 +138,8 @@ def loadData(data_dir, data_type, use_both, classes):
                if str(im_id) in train_ids:
                   train_attributes.append(att)
 
+   print train_paths[0]
+   exit()
    train_paths = np.asarray(train_paths)
    train_attributes = np.asarray(train_attributes)
    train_ids = np.asarray(train_ids)
