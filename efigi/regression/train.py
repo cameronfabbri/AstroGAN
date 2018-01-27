@@ -138,8 +138,6 @@ def loadData(data_dir, data_type, use_both, classes):
                if str(im_id) in train_ids:
                   train_attributes.append(att)
 
-   print train_paths[0]
-   exit()
    train_paths = np.asarray(train_paths)
    train_attributes = np.asarray(train_attributes)
    train_ids = np.asarray(train_ids)
@@ -211,14 +209,36 @@ if __name__ == '__main__':
    epoch_num = step/(train_len/BATCH_SIZE)
 
    while epoch_num < EPOCHS:
-   
+
       epoch_num = step/(train_len/BATCH_SIZE)
 
       idx          = np.random.choice(np.arange(train_len), BATCH_SIZE, replace=False)
       batch_y      = train_annots[idx]
-      batch_images = train_images[idx]
+      batch_paths  = train_images[idx]
 
-      _, loss_, summary = sess.run([train_op, loss, merged_summary_op], feed_dict={images:batch_images, labels:batch_y})
+      # create batch images
+      batch_images = np.empty((BATCH_SIZE, SIZE, SIZE, 3), dtype=np.float32)
+
+      i = 0
+      learning_rate = 1e-4
+      for p in batch_paths:
+         img = misc.imread(p).astype('float32')
+         img = misc.imresize(img, (SIZE,SIZE))
+         #img = img/255.0
+         batch_images[i, ...] = img
+         i += 1
+         
+      # randomly flip batch
+      r = random.random()
+      # flip image left right
+      if r < 0.5:
+         batch_images = np.fliplr(batch_images)
+      r = random.random()
+      # flip image up down
+      if r < 0.5:
+         batch_images = np.flipud(batch_images)
+
+      _, loss_, summary = sess.run([train_op, loss, merged_summary_op], feed_dict={images:batch_images, labels:batch_y, LR:learning_rate})
       
       summary_writer.add_summary(summary, step)
 
@@ -233,14 +253,23 @@ if __name__ == '__main__':
 
          idx          = np.random.choice(np.arange(test_len), BATCH_SIZE, replace=False)
          batch_y      = test_annots[idx]
-         batch_images = test_images[idx]
+         batch_paths  = test_images[idx]
+      
+         i = 0
+         for p in batch_paths:
+            img = misc.imread(p).astype('float32')
+            img = misc.imresize(img, (SIZE,SIZE))
+            #img = img/255.0
+            batch_images[i, ...] = img
+            i += 1
 
          preds = np.asarray(sess.run([logits], feed_dict={images:batch_images, labels:batch_y}))[0]
 
          f = open(CHECKPOINT_DIR+'testing.txt', 'a')
          batch_err = 0
          for r,p in zip(batch_y, preds):
-            batch_err = batch_err + np.linalg.norm(r-p)
+            # root mean squared error
+            batch_err = batch_err+sqrt(mean_squared_error(r, p))
          batch_err = float(batch_err)/float(BATCH_SIZE)
          f.write(str(step)+','+str(batch_err)+'\n')
          f.close()
