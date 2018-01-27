@@ -42,10 +42,10 @@ def loadData(data_dir, data_type, use_both, classes):
 
    if data_type == 'real':
 
-      train_paths = sorted(glob.glob(data_dir+'train/*.png'))
+      train_paths = sorted(glob.glob(data_dir+'images/train/*.png'))
       train_ids   = [ntpath.basename(x.split('.')[0]) for x in train_paths]
       
-      test_paths = sorted(glob.glob(data_dir+'/test/*.png'))
+      test_paths = sorted(glob.glob(data_dir+'images/test/*.png'))
       test_ids   = [ntpath.basename(x.split('.')[0]) for x in test_paths]
 
       print train_ids[0]
@@ -181,7 +181,7 @@ if __name__ == '__main__':
          print 'Could not restore model'
          pass
 
-   train_images, train_annots, train_ids, test_images, test_annots, test_ids = loadData(data_dir, data_type, use_both, classes):
+   train_images, train_annots, train_ids, test_images, test_annots, test_ids = loadData(data_dir, data_type, use_both, classes)
 
    train_len = len(train_annots)
    test_len  = len(test_annots)
