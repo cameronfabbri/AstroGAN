@@ -178,7 +178,7 @@ if __name__ == '__main__':
    LR = tf.placeholder(tf.float32, name='learning_rate')
 
    with slim.arg_scope(inception_resnet_v2.inception_resnet_v2_arg_scope()):
-      logits, _ = inception_resnet_v2.inception_resnet_v2(images, num_classes=18, is_training=False)
+      logits, _ = inception_resnet_v2.inception_resnet_v2(images, num_classes=5, is_training=False)
 
    loss = tf.reduce_mean(tf.nn.l2_loss(logits-labels))
 
