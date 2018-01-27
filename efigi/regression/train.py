@@ -171,10 +171,10 @@ if __name__ == '__main__':
    CHECKPOINT_DIR = 'checkpoints/'+'DATA_TYPE_'+DATA_TYPE+'/'
    try: os.makedirs(CHECKPOINT_DIR)
    except: pass
-
+   
    global_step = tf.Variable(0, name='global_step', trainable=False)
-   images = tf.placeholder(tf.float32, shape=(BATCH_SIZE, 299, 299, 3), name='real_images')
-   labels = tf.placeholder(tf.float32, shape=(BATCH_SIZE, 18), name='attributes')
+   images = tf.placeholder(tf.float32, shape=(BATCH_SIZE, 224, 224, 3), name='real_images')
+   labels = tf.placeholder(tf.float32, shape=(BATCH_SIZE, 5), name='attributes')
    LR = tf.placeholder(tf.float32, name='learning_rate')
 
    with slim.arg_scope(inception_resnet_v2.inception_resnet_v2_arg_scope()):
