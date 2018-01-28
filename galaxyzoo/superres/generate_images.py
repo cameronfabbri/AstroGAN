@@ -62,9 +62,9 @@ if __name__ == '__main__':
 
       gen_img = np.squeeze(np.asarray(sess.run([gen_images], feed_dict={small_images:img})))
 
+      img = np.squeeze(img)
       print gen_img.shape
       print img.shape
-      img = np.squeeze(img)
       exit()
       g_img = (gen_img+1.)
       g_img *= 127.5
