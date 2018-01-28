@@ -230,6 +230,7 @@ if __name__ == '__main__':
       batch_images = np.empty((BATCH_SIZE, SIZE, SIZE, 3), dtype=np.float32)
 
       i = 0
+      learning_rate = 1e-4
       for p in batch_paths:
          img = misc.imread(p).astype('float32')
          img = misc.imresize(img, (SIZE,SIZE))

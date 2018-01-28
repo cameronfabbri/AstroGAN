@@ -137,6 +137,11 @@ if __name__ == '__main__':
    DATA_DIR  = info_dict['DATA_DIR']
    use_both  = bool(info_dict['USE_BOTH'])
    NETWORK   = info_dict['NETWORK']
+   BATCH_SIZE = info_dict['BATCH_SIZE']
+
+   print DATA_TYPE
+   print NETWORK
+   print BATCH_SIZE
 
    CHECKPOINT_DIR = 'checkpoints/'+'DATA_TYPE_'+DATA_TYPE+'/NETWORK_'+NETWORK+'/USE_BOTH_'+str(use_both)+'/'
 
