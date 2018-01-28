@@ -166,8 +166,8 @@ if __name__ == '__main__':
    BATCH_SIZE     = a.BATCH_SIZE
    DATA_TYPE      = a.DATA_TYPE
    DATA_DIR       = a.DATA_DIR
+   NETWORK        = a.NETWORK
    EPOCHS         = a.EPOCHS
-   USE_BOTH       = a.USE_BOTH
    use_both       = bool(a.USE_BOTH)
    
    # using both only applies to when using gen
