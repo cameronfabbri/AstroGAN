@@ -102,22 +102,33 @@ if softmax is None:
    # get images
    import glob
    real_zoo_paths = glob.glob('/mnt/data1/images/galaxyzoo/images_training_rev1/train/*jpg')
-   gen_zoo_paths  = glob.glob('/mnt/data1/images/galaxyzoo/images_training_rev1/train/*jpg')
+   gen_zoo_paths  = glob.glob('zoo_out/*.png')
 
-   print(len(real_paths))
+   print(len(real_zoo_paths))
+   print(len(gen_zoo_paths))
    
    real_zoo_images = []
    gen_zoo_images  = []
-   for i in tqdm(real_paths):
+   for i in tqdm(real_zoo_paths):
       i = misc.imread(i)
       i = misc.imresize(i, (64,64))
-      real_images.append(i)
+      real_zoo_images.append(i)
+   
+   for i in tqdm(gen_zoo_paths):
+      i = misc.imread(i)
+      i = misc.imresize(i, (64,64))
+      gen_zoo_images.append(i)
    
    _init_inception()
    
-   real_mean_scores, real_std_scores = get_inception_score(real_images)
+   real_mean_scores, real_std_scores = get_inception_score(real_zoo_images)
    print('Got real mean scores')
    print(real_mean_scores)
    print(real_std_scores)
+   
+   gen_mean_scores, gen_std_scores = get_inception_score(gen_zoo_images)
+   print('\nGot gen mean scores')
+   print(gen_mean_scores)
+   print(gen_std_scores)
 
    exit()

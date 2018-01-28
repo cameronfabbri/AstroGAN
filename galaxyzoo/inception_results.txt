@@ -1,0 +1,5 @@
+real mean: 1.9314394
+real std: 0.012556419
+
+gen mean: 1.5217674
+gen std: 0.0066775098
