@@ -60,7 +60,7 @@ if __name__ == '__main__':
       img = data_ops.normalize(img)
       img = np.expand_dims(img, 0)
 
-      gen_img = np.squeeze(np.asarray(sess.run([gen_images], feed_dict={small_images:img})))[0]
+      gen_img = np.squeeze(np.asarray(sess.run([gen_images], feed_dict={small_images:img})))
 
       print gen_img.shape
       print img.shape
