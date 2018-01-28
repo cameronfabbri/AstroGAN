@@ -1,16 +1,5 @@
 '''
-
-   Generates galaxies along with their corresponding z and y vectors. This DOES take into account
-   config.py, and uses the y vectors from the test split I made.
-
-   Train/test split was made just using bash shuf on the training images
-
-   You can create an arbitrary number of galaxies because although there are a limited amount of
-   attributes in the test set, z is sampled randomly, so you can have multiple galaxies generated
-   with the same attributes.
-
-   Also this counts via batches (batch size 64), so if you say generate 65 images it'll generate 128
-
+   Generates x amount of galaxies
 '''
 import tensorflow.contrib.layers as tcl
 from matplotlib.pyplot import cm
@@ -40,32 +29,25 @@ if __name__ == '__main__':
    parser = argparse.ArgumentParser()
    parser.add_argument('--CHECKPOINT_DIR', required=True,help='checkpoint directory',type=str)
    parser.add_argument('--OUTPUT_DIR',     required=False,help='Directory to save data', type=str,default='./')
-   parser.add_argument('--MAX_GEN',        required=False,help='Maximum images to generate',  type=int,default=5)
-   parser.add_argument('--SIZE',           required=False,help='Size of images', type=int,default=64)
+   parser.add_argument('--NUM',        required=False,help='Maximum images to generate',  type=int,default=5)
    parser.add_argument('--DATA_DIR',       required=True,help='Data directory',type=str)
    a = parser.parse_args()
 
    CHECKPOINT_DIR = a.CHECKPOINT_DIR
    OUTPUT_DIR     = a.OUTPUT_DIR
-   MAX_GEN        = a.MAX_GEN
+   NUM        = a.NUM
    DATA_DIR       = a.DATA_DIR
-   SIZE           = a.SIZE
 
    BATCH_SIZE = 1
 
    try: os.makedirs(OUTPUT_DIR)
    except: pass
 
+   SIZE = 64
+
    # placeholders for data going into the network
    z           = tf.placeholder(tf.float32, shape=(BATCH_SIZE, 100), name='z')
    y           = tf.placeholder(tf.float32, shape=(BATCH_SIZE, 37), name='y')
-   mask        = tf.placeholder(tf.float32, shape=(BATCH_SIZE, 37), name='mask')
-
-   # multiply y by the mask of attributes actually being used
-   y = tf.multiply(y,mask)
-
-   # repeat the classes mask to be of batch size
-   #classes = np.array([classes,]*BATCH_SIZE)
 
    # generated images
    gen_images = netG(z, y, BATCH_SIZE, SIZE)
@@ -91,32 +73,23 @@ if __name__ == '__main__':
    train_images, train_annots, train_ids, test_images, test_annots, test_ids = data_ops.load_zoo(DATA_DIR, SIZE)
    test_len = len(test_annots)
 
-   num_gen = 0
-   gen_z = [] # z vectors used to generate images
-   gen_y = [] # y vectors used to generate images
-   print 'generating data...'
-   while num_gen < MAX_GEN:
+   print 'generating',str(NUM*len(test_annots)),'images'
+   i = 0
+   for a in test_annots:
+      num_gen = 0
+      while num_gen < NUM:
+         batch_z = np.random.normal(-1.0, 1.0, size=[BATCH_SIZE, 100]).astype(np.float32)
+         idx     = np.random.choice(np.arange(test_len), BATCH_SIZE, replace=False)
+         batch_y = test_annots[idx]
 
-      batch_z = np.random.normal(-1.0, 1.0, size=[BATCH_SIZE, 100]).astype(np.float32)
-      idx     = np.random.choice(np.arange(test_len), BATCH_SIZE, replace=False)
-      batch_y = test_annots[idx]
-
-      gen_imgs = sess.run([gen_images], feed_dict={z:batch_z, y:batch_y, mask:classes})[0]
-
-      batch_y = np.multiply(batch_y,classes)
-
-      for img,cur_z,cur_y in zip(gen_imgs, batch_y, batch_y):
+         img = np.squeeze(np.asarray(sess.run([gen_images], feed_dict={z:batch_z, y:batch_y})[0]))
          img = (img+1.)
          img *= 127.5
          img = np.clip(img, 0, 255).astype(np.uint8)
          img = np.reshape(img, (64, 64, -1))
 
          # save out image, z, and y*classes
-         misc.imsave(OUTPUT_DIR+str(num_gen)+'.png', img)
+         misc.imsave(OUTPUT_DIR+str(i)+'_'+str(num_gen)+'.png', img)
 
          num_gen += 1
-
-   # save out numpy arrays
-   np.save(OUTPUT_DIR+'z_vectors.npy', np.asarray(gen_z))
-   np.save(OUTPUT_DIR+'y_vectors.npy', np.asarray(gen_y))
-
+      i += 1
