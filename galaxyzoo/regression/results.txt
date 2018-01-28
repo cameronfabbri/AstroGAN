@@ -1,0 +1,7 @@
+Network     Dataset  Data  Epochs   RMSE
+Inception   Zoo      real  25       0.2117
+Inception   Zoo      gen   25       0.2200
+Inception   Zoo      both  25       0.2152
+Alexnet     Zoo      real  25       0.1697
+Alexnet     Zoo      gen   25       0.1775
+Alexnet     Zoo      both  25       0.1750
