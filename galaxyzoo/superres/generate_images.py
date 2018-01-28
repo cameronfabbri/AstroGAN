@@ -49,6 +49,8 @@ if __name__ == '__main__':
          print "Model restored"
       except:
          print "Could not restore model"
+         raise
+         exit()
          pass
    
    print 'Loading data...'
