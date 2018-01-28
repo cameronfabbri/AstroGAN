@@ -160,7 +160,7 @@ if __name__ == '__main__':
    parser.add_argument('--DATA_DIR',   required=True,help='Data directory',type=str)
    parser.add_argument('--USE_BOTH',   required=True,help='Use both real and gen',type=int)
    parser.add_argument('--NETWORK',    required=True,help='Which network',type=str)
-   parser.add_argument('--EPOCHS',   required=False,help='Number of epochs',type=int,default=100)
+   parser.add_argument('--EPOCHS',     required=False,help='Number of epochs',type=int,default=100)
    a = parser.parse_args()
 
    BATCH_SIZE     = a.BATCH_SIZE
@@ -169,8 +169,11 @@ if __name__ == '__main__':
    EPOCHS         = a.EPOCHS
    USE_BOTH       = a.USE_BOTH
    use_both       = bool(a.USE_BOTH)
+   
+   # using both only applies to when using gen
+   if DATA_TYPE == 'real': use_both = bool(0)
 
-   CHECKPOINT_DIR = 'checkpoints/'+'DATA_TYPE_'+DATA_TYPE+'/'
+   CHECKPOINT_DIR = 'checkpoints/'+'DATA_TYPE_'+DATA_TYPE+'/NETWORK_'+NETWORK+'/USE_BOTH_'+str(use_both)+'/'
    try: os.makedirs(CHECKPOINT_DIR)
    except: pass
    
@@ -179,8 +182,17 @@ if __name__ == '__main__':
    labels = tf.placeholder(tf.float32, shape=(BATCH_SIZE, 5), name='attributes')
    LR = tf.placeholder(tf.float32, name='learning_rate')
 
-   with slim.arg_scope(inception_resnet_v2.inception_resnet_v2_arg_scope()):
-      logits, _ = inception_resnet_v2.inception_resnet_v2(images, num_classes=5, is_training=False)
+   # clip logits between [0, 1] because that's the range of the labels
+   if NETWORK == 'inception':
+      print 'Using inception'
+      with slim.arg_scope(inception_resnet_v2.inception_resnet_v2_arg_scope()):
+         logits, _ = inception_resnet_v2.inception_resnet_v2(images, num_classes=5, is_training=True)
+         logits = tf.minimum(tf.maximum(0.0,logits), 1.0)
+   if NETWORK == 'alexnet':
+      print 'Using alexnet'
+      with slim.arg_scope(alexnet.alexnet_v2_arg_scope()):
+         logits, _ = alexnet.alexnet_v2(images, num_classes=5, is_training=True)
+         logits = tf.minimum(tf.maximum(0.0,logits), 1.0)
 
    loss = tf.reduce_mean(tf.nn.l2_loss(logits-labels))
 
