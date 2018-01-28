@@ -46,7 +46,7 @@ if __name__ == '__main__':
          pass
    
    print 'Loading data...'
-   paths = np.asarray(sorted(glob.glob(IN_DIR+'images_training_rev1/train/*.png')))
+   paths = np.asarray(sorted(glob.glob(IN_DIR+'*.png')))
 
    for img_p in paths:
       print img_p
