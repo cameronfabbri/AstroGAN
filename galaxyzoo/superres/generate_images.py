@@ -7,6 +7,7 @@ import matplotlib.pyplot as plt
 import scipy.misc as misc
 import cPickle as pickle
 import tensorflow as tf
+from tqdm import tqdm
 import numpy as np
 import argparse
 import random
@@ -58,7 +59,7 @@ if __name__ == '__main__':
    paths = np.asarray(sorted(glob.glob(IN_DIR+'*.png')))
 
    i = 0
-   for img_p in paths:
+   for img_p in tqdm(paths):
       print img_p
       img = misc.imread(img_p)
       img = misc.imresize(img, (64,64))
@@ -74,4 +75,3 @@ if __name__ == '__main__':
       misc.imsave(OUT_DIR+str(i)+'_real.png', img)
       misc.imsave(OUT_DIR+str(i)+'_gen.png', g_img)
       i += 1
-      exit()
