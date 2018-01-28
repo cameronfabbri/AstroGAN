@@ -64,6 +64,7 @@ if __name__ == '__main__':
 
       print gen_img.shape
       print img.shape
+      img = np.squeeze(img)
       exit()
       g_img = (gen_img+1.)
       g_img *= 127.5
