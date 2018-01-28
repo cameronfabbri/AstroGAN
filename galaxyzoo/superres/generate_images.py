@@ -34,6 +34,10 @@ if __name__ == '__main__':
    # generated images - output is 256x256x3
    gen_images = netG(small_images)
 
+   sess  = tf.Session()
+   init = tf.group(tf.global_variables_initializer(), tf.local_variables_initializer())
+   sess.run(init)
+
    # restore previous model if there is one
    ckpt = tf.train.get_checkpoint_state(CHECKPOINT_DIR)
    if ckpt and ckpt.model_checkpoint_path:
