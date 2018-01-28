@@ -60,7 +60,6 @@ if __name__ == '__main__':
 
    i = 0
    for img_p in tqdm(paths):
-      print img_p
       img = misc.imread(img_p)
       img = misc.imresize(img, (64,64))
       img = data_ops.normalize(img)
