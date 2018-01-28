@@ -29,6 +29,7 @@ if __name__ == '__main__':
    IN_DIR  = sys.argv[2]
    OUT_DIR = sys.argv[3]
 
+   try: os.makedirs(OUT_DIR)
    small_images = tf.placeholder(tf.float32, shape=(1, 64, 64, 3), name='real_images')
 
    # generated images - output is 256x256x3
