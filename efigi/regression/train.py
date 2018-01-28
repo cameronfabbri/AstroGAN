@@ -35,6 +35,7 @@ import data_ops
 from config import classes
 
 import inception_resnet_v2
+import alexnet
 
 slim = tf.contrib.slim
 
