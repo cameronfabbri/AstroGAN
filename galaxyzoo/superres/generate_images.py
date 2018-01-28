@@ -65,7 +65,7 @@ if __name__ == '__main__':
       g_img = (gen_img+1.)
       g_img *= 127.5
       g_img = np.clip(g_img, 0, 255).astype(np.uint8)
-      misc.imsave(OUT_DIR++str(i)+'_real.png', img)
-      misc.imsave(OUT_DIR++str(i)+'_gen.png', g_img)
+      misc.imsave(OUT_DIR+str(i)+'_real.png', img)
+      misc.imsave(OUT_DIR+str(i)+'_gen.png', g_img)
       i += 1
       exit()
