@@ -171,10 +171,22 @@ if __name__ == '__main__':
    
    # using both only applies to when using gen
    if DATA_TYPE == 'real': use_both = bool(0)
-
+   
    CHECKPOINT_DIR = 'checkpoints/'+'DATA_TYPE_'+DATA_TYPE+'/NETWORK_'+NETWORK+'/USE_BOTH_'+str(use_both)+'/'
    try: os.makedirs(CHECKPOINT_DIR)
    except: pass
+
+   info_dict = {}
+   info_dict['BATCH_SIZE'] = BATCH_SIZE
+   info_dict['DATA_TYPE']  = DATA_TYPE
+   info_dict['DATA_DIR']   = DATA_DIR
+   info_dict['USE_BOTH']   = use_both
+   info_dict['NETWORK']    = NETWORK
+   info_dict['EPOCHS']     = EPOCHS
+   exp_pkl = open(CHECKPOINT_DIR+'info.pkl', 'wb')
+   data = pickle.dumps(info_dict)
+   exp_pkl.write(data)
+   exp_pkl.close()
    
    global_step = tf.Variable(0, name='global_step', trainable=False)
    images = tf.placeholder(tf.float32, shape=(BATCH_SIZE, 224, 224, 3), name='real_images')
@@ -186,12 +198,10 @@ if __name__ == '__main__':
       print 'Using inception'
       with slim.arg_scope(inception_resnet_v2.inception_resnet_v2_arg_scope()):
          logits, _ = inception_resnet_v2.inception_resnet_v2(images, num_classes=5, is_training=True)
-         logits = tf.minimum(tf.maximum(0.0,logits), 1.0)
    if NETWORK == 'alexnet':
       print 'Using alexnet'
       with slim.arg_scope(alexnet.alexnet_v2_arg_scope()):
          logits, _ = alexnet.alexnet_v2(images, num_classes=5, is_training=True)
-         logits = tf.minimum(tf.maximum(0.0,logits), 1.0)
 
    loss = tf.reduce_mean(tf.nn.l2_loss(logits-labels))
 
