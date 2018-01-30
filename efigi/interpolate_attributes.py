@@ -91,10 +91,11 @@ if __name__ == '__main__':
    two_z = np.random.normal(0.0, 1.0, size=[2, 100]).astype(np.float32)
    two_z[0] = two_z[1]
 
+   # arm strength, arm curvature, dust, multiplicity, redshift
    # uncomment if you want to manually change an attribute
    batch_y[0] = batch_y[1]
-   batch_y[0][1] = 0
-   batch_y[1][1] = 1
+   batch_y[0][3] = 0
+   batch_y[1][3] = 1
    print batch_y[0]
    print
    print batch_y[1]

@@ -59,7 +59,7 @@ if __name__ == '__main__':
    # placeholders for data going into the network
    global_step = tf.Variable(0, name='global_step', trainable=False)
    z           = tf.placeholder(tf.float32, shape=(BATCH_SIZE, 100), name='z')
-   y           = tf.placeholder(tf.float32, shape=(BATCH_SIZE, 5), name='y')
+   y           = tf.placeholder(tf.float32, shape=(BATCH_SIZE, y_dim), name='y')
 
    # generated images
    gen_images = netG(z, y, BATCH_SIZE, 64)
@@ -91,7 +91,10 @@ if __name__ == '__main__':
    idx     = np.random.choice(np.arange(test_len), BATCH_SIZE, replace=False)
    batch_y = test_annots[idx]
    batch_y[:NUM+1] = batch_y[1] # gotta make sure they have the same attributes
+   print
    print batch_y[0]
+   print batch_y[1]
+   print
 
    # the two z vectors to interpolate between
    two_z = np.random.normal(0.0, 1.0, size=[2, 100]).astype(np.float32)

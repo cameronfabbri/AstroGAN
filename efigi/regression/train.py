@@ -87,6 +87,7 @@ def loadData(data_dir, data_type, use_both, classes):
       train_ids   = [ntpath.basename(x.split('.')[0]) for x in train_paths]
       train_attributes = []
 
+      train_paths = []
       with open('/mnt/data1/images/efigi/EFIGI_attributes.txt', 'r') as f:
          for line in f:
             line     = line.rstrip().split()
@@ -97,7 +98,9 @@ def loadData(data_dir, data_type, use_both, classes):
             try: line = np.append(line, redict[galaxy_id])
             except: continue # don't use this one in training if no redshift (about 400 total)
             if galaxy_id in train_ids:
+               image_p = '/mnt/data1/images/efigi/images/train/'+galaxy_id+'.png'
                train_attributes.append(line)
+               train_paths.append(image_p)
 
    # going to use both real data and generated data
    if data_type == 'gen':
@@ -119,9 +122,9 @@ def loadData(data_dir, data_type, use_both, classes):
       if use_both == True:
          print 'Using real data along with gen'
          # real data loading. Repetitive, but works
-         train_paths = train_paths + sorted(glob.glob('/mnt/data1/images/efigi/images/train/*.png'))
-         train_ids   = set(train_ids + [ntpath.basename(x.split('.')[0]) for x in train_paths])
-      
+         #train_paths = train_paths + sorted(glob.glob('/mnt/data1/images/efigi/images/train/*.png'))
+         train_ids   = train_ids + [ntpath.basename(x.split('.')[0]) for x in sorted(glob.glob('/mnt/data1/images/efigi/images/train/*.png'))]
+         
          with open('/mnt/data1/images/efigi/EFIGI_attributes.txt', 'r') as f:
             for line in f:
                line     = line.rstrip().split()
@@ -132,12 +135,10 @@ def loadData(data_dir, data_type, use_both, classes):
                try: line = np.append(line, redict[galaxy_id])
                except: continue # don't use this one in training if no redshift (about 400 total)
                if galaxy_id in train_ids:
+                  image_p = '/mnt/data1/images/efigi/images/train/'+galaxy_id+'.png'
                   train_attributes.append(line)
+                  train_paths.append(image_p)
 
-   print len(train_paths)
-   print len(train_attributes)
-   print len(train_ids)
-   exit()
    train_paths = np.asarray(train_paths)
    train_attributes = np.asarray(train_attributes)
    train_ids = np.asarray(train_ids)

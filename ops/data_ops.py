@@ -78,7 +78,7 @@ def load_efigi(data_dir, classes, size):
 
    train_images     = glob.glob(data_dir+'images/train/*.png')
    test_images      = glob.glob(data_dir+'images/test/*.png')
-
+   print len(train_images)
    # get train ids from train folder
    train_ids = [ntpath.basename(x.split('.')[0]) for x in train_images]
    test_ids  = [ntpath.basename(x.split('.')[0]) for x in test_images]

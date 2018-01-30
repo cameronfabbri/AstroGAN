@@ -68,11 +68,20 @@ if __name__ == '__main__':
 
    try: os.makedirs(OUTPUT_DIR)
    except: pass
+   
+   # find y dimension
+   classes = CLASSES
+   idx_ = np.array([1, 4, 7, 10, 13, 16, 19, 22, 25, 28, 31, 34, 37, 40, 43, 46, 49])
+   idx_ = np.multiply(classes[:-1], idx_)
+   idx = [x for x in idx_ if x != 0]
+   y_dim = len(idx)
+   # account for redshift attribute
+   if classes[-1] == 1: y_dim += 1
 
    # placeholders for data going into the network
    global_step = tf.Variable(0, name='global_step', trainable=False)
    z           = tf.placeholder(tf.float32, shape=(BATCH_SIZE, 100), name='z')
-   y           = tf.placeholder(tf.float32, shape=(BATCH_SIZE, 18), name='y')
+   y           = tf.placeholder(tf.float32, shape=(BATCH_SIZE, y_dim), name='y')
 
    # generated images
    gen_images = netG(z, y, BATCH_SIZE, 64)
@@ -111,6 +120,11 @@ if __name__ == '__main__':
    y2 = batch_y[1]
    y3 = batch_y[2]
    y4 = batch_y[3]
+
+   print y1
+   print y2
+   print y3
+   print y4
 
    # four corners
    z1 = f_z[0]
