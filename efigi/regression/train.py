@@ -209,7 +209,7 @@ if __name__ == '__main__':
    summary_writer = tf.summary.FileWriter(CHECKPOINT_DIR+'/'+'logs/', graph=tf.get_default_graph())
    merged_summary_op = tf.summary.merge_all()
    
-   train_op = tf.train.AdamOptimizer(learning_rate=1e-4).minimize(loss, global_step=global_step)
+   train_op = tf.train.AdamOptimizer(learning_rate=LR).minimize(loss, global_step=global_step)
    
    saver = tf.train.Saver(max_to_keep=1)
    init = tf.group(tf.global_variables_initializer(), tf.local_variables_initializer())
@@ -235,6 +235,8 @@ if __name__ == '__main__':
    epoch_num = step/(train_len/BATCH_SIZE)
 
    learning_rate = 1e-4
+   if NETWORK == 'inception' and DATA_TYPE == 'gen': learning_rate = 1e-5
+   print 'learning rate:',learning_rate
    while epoch_num < EPOCHS:
 
       epoch_num = step/(train_len/BATCH_SIZE)
@@ -301,4 +303,7 @@ if __name__ == '__main__':
          f.write(str(step)+','+str(batch_err)+'\n')
          f.close()
 
+   print 'Saving model...'
+   saver.save(sess, CHECKPOINT_DIR+'checkpoint-'+str(step))
+   saver.export_meta_graph(CHECKPOINT_DIR+'checkpoint-'+str(step)+'.meta')
    print 'Training done'
