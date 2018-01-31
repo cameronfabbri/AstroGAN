@@ -21,6 +21,7 @@ import cv2
 import os
 
 sys.path.insert(0, '../ops/')
+sys.path.insert(0, '../')
 
 from tf_ops import *
 import data_ops
@@ -28,6 +29,8 @@ from nets import *
 
 
 if __name__ == '__main__':
+
+   SIZE = 64
 
    parser = argparse.ArgumentParser()
    parser.add_argument('--CHECKPOINT_DIR', required=True,help='checkpoint directory',type=str)
@@ -48,10 +51,10 @@ if __name__ == '__main__':
    # placeholders for data going into the network
    global_step = tf.Variable(0, name='global_step', trainable=False)
    z           = tf.placeholder(tf.float32, shape=(BATCH_SIZE, 100), name='z')
-   y           = tf.placeholder(tf.float32, shape=(BATCH_SIZE, 4), name='y')
+   y           = tf.placeholder(tf.float32, shape=(BATCH_SIZE, 37), name='y')
 
    # generated images
-   gen_images = netG(z, y, BATCH_SIZE)
+   gen_images = netG(z, y, BATCH_SIZE, 64)
    
    saver = tf.train.Saver(max_to_keep=1)
    init = tf.group(tf.global_variables_initializer(), tf.local_variables_initializer())
@@ -71,7 +74,7 @@ if __name__ == '__main__':
          exit()
    
    print 'Loading data...'
-   images, annots, test_images, test_annots, _ = data_ops.load_galaxy(DATA_DIR)
+   train_images, train_annots, train_ids, test_images, test_annots, test_ids = data_ops.load_zoo(DATA_DIR, SIZE)
    test_len = len(test_annots)
 
    print 'generating data...'
@@ -109,7 +112,7 @@ if __name__ == '__main__':
    latent_y = np.asarray(latent_y)
 
    gen_imgs = sess.run([gen_images], feed_dict={z:latent_vectors, y:latent_y})[0]
-   canvas   = 255*np.ones((80, 64*(NUM+2), 3), dtype=np.uint8)
+   canvas   = 255*np.ones((80, 64*(NUM+1), 3), dtype=np.uint8)
    start_x  = 10
    start_y  = 10
    end_y    = start_y+64
