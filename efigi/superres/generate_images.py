@@ -15,7 +15,6 @@ import ntpath
 import glob
 import time
 import sys
-import cv2
 import os
 
 # my own imports
@@ -72,11 +71,6 @@ if __name__ == '__main__':
       g_img = (gen_img+1.)
       g_img *= 127.5
       g_img = np.clip(g_img, 0, 255).astype(np.uint8)
-
-      # also use bicubic interpolation and save that too
-      b_int = cv2.resize(img, (256,256), interpolation=cv2.INTER_CUBIC)
-
       misc.imsave(OUT_DIR+str(i)+'_real.png', img)
-      misc.imsave(OUT_DIR+str(i)+'_interp.png', b_int)
       misc.imsave(OUT_DIR+str(i)+'_gen.png', g_img)
       i += 1
