@@ -1,4 +1,4 @@
-# GalaxyGen
+# AstroGAN
 Generating galaxies using GANs
 
 TODO
