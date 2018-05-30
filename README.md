@@ -6,9 +6,8 @@ Below are some examples from two datasets. For each example, the row on the far 
 real image from a held out test set, and the remaining columns are the generated images.
 Each row corresponds to the same morphological feature.
 
-### EFIGI
-![efigi](https://i.imgur.com/nEWQDpO.png)
-
-
 ### GalaxyZoo
 ![zoo](https://i.imgur.com/5IxzM81.png)
+
+### EFIGI
+![efigi](https://i.imgur.com/nEWQDpO.png)
