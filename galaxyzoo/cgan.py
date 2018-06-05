@@ -58,7 +58,7 @@ if __name__ == '__main__':
       cn = cn + str(i)
 
    CHECKPOINT_DIR = 'checkpoints/GAN_'+GAN\
-                    +'/UPSAMPLE'+str(UPSAMPLE)\
+                    +'/UPSAMPLE_'+str(UPSAMPLE)\
                     +'/BETA1_'+str(BETA1)\
                     +'/CLASSES_'+str(cn)\
                     +'/NETWORK_'+NETWORK\
@@ -258,8 +258,12 @@ if __name__ == '__main__':
 
       # now get all losses and summary *without* performing a training step - for tensorboard and printing
       sess.run(G_train_op, feed_dict={z:batch_z, y:batch_y, real_images:batch_images, mask:classes})
-      D_loss, G_loss, P_loss, summary = sess.run([errD, errG, errP, merged_summary_op],
-                              feed_dict={z:batch_z, y:batch_y, real_images:batch_images, mask:classes})
+      if PREDICT:
+         D_loss, G_loss, P_loss, summary = sess.run([errD, errG, errP, merged_summary_op],
+                                 feed_dict={z:batch_z, y:batch_y, real_images:batch_images, mask:classes})
+      else:
+         D_loss, G_loss, summary = sess.run([errD, errG, merged_summary_op],
+                                 feed_dict={z:batch_z, y:batch_y, real_images:batch_images, mask:classes})
 
       summary_writer.add_summary(summary, step)
 
