@@ -31,11 +31,12 @@ if __name__ == '__main__':
    parser = argparse.ArgumentParser()
    parser.add_argument('--GAN',        required=False,help='Type of GAN loss to use',  type=str,  default='wgan')
    parser.add_argument('--CROP',       required=False,help='Center crop images or not',type=int,  default=1)
-   parser.add_argument('--SIZE',       required=False,help='Size of the images',       type=int,  default=64)
+   parser.add_argument('--SIZE',       required=False,help='Output size of generator', type=int,  default=64)
    parser.add_argument('--BETA1',      required=False,help='beta1 ADAM parameter',     type=float,default=0.)
    parser.add_argument('--EPOCHS',     required=False,help='Maximum number of epochs', type=int,  default=100)
    parser.add_argument('--NETWORK',    required=False,help='Network to use',           type=str,  default='dcgan')
    parser.add_argument('--PREDICT',    required=False,help='D predicts morphology',    type=int,  default=0)
+   parser.add_argument('--UPSAMPLE',   required=False,help='Method to upsample in G',  type=str,  default='transpose')
    parser.add_argument('--DATA_DIR',   required=True, help='Directory where data is',  type=str,  default='./')
    parser.add_argument('--BATCH_SIZE', required=False,help='Batch size',               type=int,  default=64)
    a = parser.parse_args()
@@ -46,8 +47,9 @@ if __name__ == '__main__':
    BETA1          = a.BETA1
    EPOCHS         = a.EPOCHS
    PREDICT        = bool(a.PREDICT)
-   DATA_DIR       = a.DATA_DIR
    NETWORK        = a.NETWORK
+   DATA_DIR       = a.DATA_DIR
+   UPSAMPLE       = a.UPSAMPLE
    BATCH_SIZE     = a.BATCH_SIZE
 
    # convert to string for directory naming
@@ -56,12 +58,13 @@ if __name__ == '__main__':
       cn = cn + str(i)
 
    CHECKPOINT_DIR = 'checkpoints/GAN_'+GAN\
-                    +'/SIZE_'+str(SIZE)\
+                    +'/UPSAMPLE'+str(UPSAMPLE)\
                     +'/BETA1_'+str(BETA1)\
                     +'/CLASSES_'+str(cn)\
                     +'/NETWORK_'+NETWORK\
                     +'/CROP_'+str(CROP)\
                     +'/PREDICT_'+str(PREDICT)\
+                    +'/SIZE_'+str(SIZE)\
                     +'/'
 
    IMAGES_DIR     = CHECKPOINT_DIR+'images/'
@@ -74,13 +77,13 @@ if __name__ == '__main__':
    info_dict['BETA1']          = BETA1
    info_dict['NETWORK']        = NETWORK
    info_dict['CLASSES']        = classes
+   info_dict['UPSAMPLE']       = UPSAMPLE
    info_dict['DATA_DIR']       = DATA_DIR
    info_dict['BATCH_SIZE']     = BATCH_SIZE
    info_dict['CHECKPOINT_DIR'] = CHECKPOINT_DIR
 
    try: os.makedirs(IMAGES_DIR)
    except: pass
-   exit()
 
    exp_pkl = open(CHECKPOINT_DIR+'info.pkl', 'wb')
    data = pickle.dumps(info_dict)
@@ -101,15 +104,15 @@ if __name__ == '__main__':
    classes = np.array([classes,]*BATCH_SIZE)
 
    # generated images
-   if NETWORK == 'dcgan': gen_images = netG(z, y, BATCH_SIZE, SIZE)
-   if NETWORK == 'resnet': gen_images = netGResnet(z, y, BATCH_SIZE, SIZE)
+   if NETWORK == 'dcgan': gen_images = netG(z, y, UPSAMPLE)
+   if NETWORK == 'resnet': gen_images = netGResnet(z, y, UPSAMPLE)
 
    # get the output from D on the real and fake data
-   if NETWORK == 'dcgan': errD_real = netD(real_images, y, BATCH_SIZE, GAN, SIZE)
-   if NETWORK == 'dcgan': errD_fake = netD(gen_images, y, BATCH_SIZE, GAN, SIZE, reuse=True)
+   if NETWORK == 'dcgan': errD_real, pred_real = netD(real_images, y, GAN, SIZE, PREDICT)
+   if NETWORK == 'dcgan': errD_fake, pred_fake = netD(gen_images, y, GAN, SIZE, PREDICT, reuse=True)
    
-   if NETWORK == 'resnet': errD_real = netDResnet(real_images, y, BATCH_SIZE, GAN, SIZE)
-   if NETWORK == 'resnet': errD_fake = netDResnet(gen_images, y, BATCH_SIZE, GAN, SIZE, reuse=True)
+   if NETWORK == 'resnet': errD_real = netDResnet(real_images, y, GAN, SIZE)
+   if NETWORK == 'resnet': errD_fake = netDResnet(gen_images, y, GAN, SIZE, reuse=True)
 
    # Important! no initial activations done on the last layer for D, so if one method needs an activation, do it here
    e = 1e-12
@@ -145,8 +148,8 @@ if __name__ == '__main__':
       # gradient penalty
       epsilon = tf.random_uniform([], 0.0, 1.0)
       x_hat = real_images*epsilon + (1-epsilon)*gen_images
-      if NETWORK == 'dcgan': d_hat = netD(x_hat, y, BATCH_SIZE, GAN, SIZE, reuse=True)
-      if NETWORK == 'resnet': d_hat = netDResnet(x_hat, y, BATCH_SIZE, GAN, SIZE, reuse=True)
+      if NETWORK == 'dcgan': d_hat = netD(x_hat, y, GAN, SIZE, PREDICT, reuse=True)
+      if NETWORK == 'resnet': d_hat = netDResnet(x_hat, y, GAN, SIZE, reuse=True)
       gradients = tf.gradients(d_hat, x_hat)[0]
       slopes = tf.sqrt(tf.reduce_sum(tf.square(gradients), reduction_indices=[1]))
       gradient_penalty = 10*tf.reduce_mean((slopes-1.0)**2)
