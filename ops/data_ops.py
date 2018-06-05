@@ -120,10 +120,16 @@ def load_efigi(data_dir, classes, size):
 
    return np.asarray(train_images), np.asarray(train_attributes), np.asarray(train_ids), np.asarray(test_images), np.asarray(test_attributes), np.asarray(r_test_ids)
 
+def crop_center(img,cropx,cropy):
+   y,x,c = img.shape
+   startx = x//2-(cropx//2)
+   starty = y//2-(cropy//2)    
+   return img[starty:starty+cropy,startx:startx+cropx]
+
 '''
    Galaxy zoo dataset.
 '''
-def load_zoo(data_dir, size):
+def load_zoo(data_dir, size, crop=True):
 
    train_images = sorted(glob.glob(data_dir+'images_training_rev1/train/*.jpg'))
    train_ids    = [ntpath.basename(x.split('.')[0]) for x in train_images]
@@ -153,6 +159,7 @@ def load_zoo(data_dir, size):
          line = np.asarray(line.split(',')).astype('float32')
          im_id = int(line[0])
          img = misc.imread(id_dict[im_id]).astype('float32')
+         if crop: img = crop_center(img, 212, 212)
          img = misc.imresize(img, (size,size))
          img = normalize(img)
          att = line[1:]

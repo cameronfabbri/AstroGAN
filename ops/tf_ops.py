@@ -86,21 +86,26 @@ def instance_norm(x, epsilon=1e-5):
 
    The new height and width can be anything, but default to the current shape * 2
 '''
-def upconv2d(x, filters, name=None, new_height=None, new_width=None, kernel_size=3):
+def upconv2d(x, filters, method='nn', name=None, new_height=None, new_width=None, kernel_size=3):
 
-   print 'x:',x
+   if method == 'bilinear': resize = tf.image.resize_images
+   if method == 'bicubic':  resize = tf.image.resize_bicubic
+   if method == 'area':     resize = tf.image.resize_area
+   if method == 'nn':       resize = tf.image.resize_nearest_neighbor
+
    shapes = x.get_shape().as_list()
    height = shapes[1]
    width  = shapes[2]
 
    # resize image using method of nearest neighbor
    if new_height is None and new_width is None:
-      x_resize = tf.image.resize_nearest_neighbor(x, [height*2, width*2])
+      x_resize = resize(x, [height*2, width*2])
    else:
-      x_resize = tf.image.resize_nearest_neighbor(x, [new_height, new_width])
+      x_resize = resize(x, [new_height, new_width])
 
-   # conv with stride 1
-   return tf.layers.conv2d(x_resize, filters, kernel_size, strides=1, name=name)
+   # conv with stride 1 and padding to keep same size
+   conv = tf.layers.conv2d(x_resize, filters, kernel_size, strides=1, name=name, padding='SAME')
+   return conv
 
 ''' 
    Phase shift. PS is the phase shift function and _phase_shift is a helper

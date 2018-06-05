@@ -30,7 +30,7 @@ if __name__ == '__main__':
    # params
    parser = argparse.ArgumentParser()
    parser.add_argument('--GAN',        required=False,help='Type of GAN loss to use',  type=str,  default='wgan')
-   parser.add_argument('--CROP',       required=False,help='Center crop images or not',type=int,  default=1)
+   parser.add_argument('--CROP',       required=False,help='Center crop images or not',type=int,  default=0)
    parser.add_argument('--SIZE',       required=False,help='Output size of generator', type=int,  default=64)
    parser.add_argument('--BETA1',      required=False,help='beta1 ADAM parameter',     type=float,default=0.)
    parser.add_argument('--EPOCHS',     required=False,help='Maximum number of epochs', type=int,  default=100)
@@ -148,7 +148,7 @@ if __name__ == '__main__':
       # gradient penalty
       epsilon = tf.random_uniform([], 0.0, 1.0)
       x_hat = real_images*epsilon + (1-epsilon)*gen_images
-      if NETWORK == 'dcgan': d_hat = netD(x_hat, y, GAN, SIZE, PREDICT, reuse=True)
+      if NETWORK == 'dcgan': d_hat, m = netD(x_hat, y, GAN, SIZE, PREDICT, reuse=True)
       if NETWORK == 'resnet': d_hat = netDResnet(x_hat, y, GAN, SIZE, reuse=True)
       gradients = tf.gradients(d_hat, x_hat)[0]
       slopes = tf.sqrt(tf.reduce_sum(tf.square(gradients), reduction_indices=[1]))
@@ -166,6 +166,8 @@ if __name__ == '__main__':
       errP1 = tf.nn.l2_loss(y-pred_real)
       errP2 = tf.nn.l2_loss(y-pred_fake)
       errP = (errP1+errP2)/2.
+
+      errG = errG + errP
 
    # tensorboard summaries
    tf.summary.scalar('d_loss', errD)
@@ -256,12 +258,12 @@ if __name__ == '__main__':
 
       # now get all losses and summary *without* performing a training step - for tensorboard and printing
       sess.run(G_train_op, feed_dict={z:batch_z, y:batch_y, real_images:batch_images, mask:classes})
-      D_loss, G_loss, summary = sess.run([errD, errG, merged_summary_op],
+      D_loss, G_loss, P_loss, summary = sess.run([errD, errG, errP, merged_summary_op],
                               feed_dict={z:batch_z, y:batch_y, real_images:batch_images, mask:classes})
 
       summary_writer.add_summary(summary, step)
 
-      try: print 'epoch:',epoch_num,'step:',step,'D loss:',D_loss,'G_loss:',G_loss,'errP:',errP
+      try: print 'epoch:',epoch_num,'step:',step,'D loss:',D_loss,'G_loss:',G_loss,'P_loss:',P_loss
       except: print 'epoch:',epoch_num,'step:',step,'D loss:',D_loss,'G_loss:',G_loss
       step += 1
     
