@@ -30,18 +30,24 @@ if __name__ == '__main__':
    # params
    parser = argparse.ArgumentParser()
    parser.add_argument('--GAN',        required=False,help='Type of GAN loss to use',  type=str,  default='wgan')
+   parser.add_argument('--CROP',       required=False,help='Center crop images or not',type=int,  default=1)
    parser.add_argument('--SIZE',       required=False,help='Size of the images',       type=int,  default=64)
-   parser.add_argument('--BETA1',      required=False,help='beta1 ADAM parameter',     type=float,default=0.0) # wgan only
+   parser.add_argument('--BETA1',      required=False,help='beta1 ADAM parameter',     type=float,default=0.)
    parser.add_argument('--EPOCHS',     required=False,help='Maximum number of epochs', type=int,  default=100)
+   parser.add_argument('--NETWORK',    required=False,help='Network to use',           type=str,  default='dcgan')
+   parser.add_argument('--PREDICT',    required=False,help='D predicts morphology',    type=int,  default=0)
    parser.add_argument('--DATA_DIR',   required=True, help='Directory where data is',  type=str,  default='./')
    parser.add_argument('--BATCH_SIZE', required=False,help='Batch size',               type=int,  default=64)
    a = parser.parse_args()
 
    GAN            = a.GAN
    SIZE           = a.SIZE
+   CROP           = bool(a.CROP)
    BETA1          = a.BETA1
    EPOCHS         = a.EPOCHS
+   PREDICT        = bool(a.PREDICT)
    DATA_DIR       = a.DATA_DIR
+   NETWORK        = a.NETWORK
    BATCH_SIZE     = a.BATCH_SIZE
 
    # convert to string for directory naming
@@ -49,22 +55,32 @@ if __name__ == '__main__':
    for i in classes:
       cn = cn + str(i)
 
-   CHECKPOINT_DIR = 'checkpoints/GAN_'+GAN+'/SIZE_'+str(SIZE)+'/BETA1_'+str(BETA1)+'/CLASSES_'+str(cn)+'/'
+   CHECKPOINT_DIR = 'checkpoints/GAN_'+GAN\
+                    +'/SIZE_'+str(SIZE)\
+                    +'/BETA1_'+str(BETA1)\
+                    +'/CLASSES_'+str(cn)\
+                    +'/NETWORK_'+NETWORK\
+                    +'/CROP_'+str(CROP)\
+                    +'/PREDICT_'+str(PREDICT)\
+                    +'/'
+
    IMAGES_DIR     = CHECKPOINT_DIR+'images/'
 
    # store all this information in a pickle file
    info_dict = {}
-   info_dict['GAN']        = GAN
-   info_dict['SIZE']       = SIZE
-   info_dict['BETA1']      = BETA1
-   info_dict['BATCH_SIZE'] = BATCH_SIZE
-   info_dict['CLASSES'] = classes
-   info_dict['DATA_DIR'] = DATA_DIR
+   info_dict['GAN']            = GAN
+   info_dict['SIZE']           = SIZE
+   info_dict['CROP']           = CROP
+   info_dict['BETA1']          = BETA1
+   info_dict['NETWORK']        = NETWORK
+   info_dict['CLASSES']        = classes
+   info_dict['DATA_DIR']       = DATA_DIR
+   info_dict['BATCH_SIZE']     = BATCH_SIZE
    info_dict['CHECKPOINT_DIR'] = CHECKPOINT_DIR
-   info_dict['classes'] = classes
 
    try: os.makedirs(IMAGES_DIR)
    except: pass
+   exit()
 
    exp_pkl = open(CHECKPOINT_DIR+'info.pkl', 'wb')
    data = pickle.dumps(info_dict)
@@ -74,7 +90,7 @@ if __name__ == '__main__':
    global_step = tf.Variable(0, name='global_step', trainable=False)
    # placeholders for data going into the network
    real_images = tf.placeholder(tf.float32, shape=(BATCH_SIZE, SIZE, SIZE, 3), name='real_images')
-   z           = tf.placeholder(tf.float32, shape=(BATCH_SIZE, 100), name='z')
+   z           = tf.placeholder(tf.float32, shape=(BATCH_SIZE, 128), name='z')
    y           = tf.placeholder(tf.float32, shape=(BATCH_SIZE, 37), name='y')
    mask        = tf.placeholder(tf.float32, shape=(BATCH_SIZE, 37), name='mask')
 
@@ -85,11 +101,15 @@ if __name__ == '__main__':
    classes = np.array([classes,]*BATCH_SIZE)
 
    # generated images
-   gen_images = netG(z, y, BATCH_SIZE, SIZE)
+   if NETWORK == 'dcgan': gen_images = netG(z, y, BATCH_SIZE, SIZE)
+   if NETWORK == 'resnet': gen_images = netGResnet(z, y, BATCH_SIZE, SIZE)
 
    # get the output from D on the real and fake data
-   errD_real = netD(real_images, y, BATCH_SIZE, GAN, SIZE)
-   errD_fake = netD(gen_images, y, BATCH_SIZE, GAN, SIZE, reuse=True)
+   if NETWORK == 'dcgan': errD_real = netD(real_images, y, BATCH_SIZE, GAN, SIZE)
+   if NETWORK == 'dcgan': errD_fake = netD(gen_images, y, BATCH_SIZE, GAN, SIZE, reuse=True)
+   
+   if NETWORK == 'resnet': errD_real = netDResnet(real_images, y, BATCH_SIZE, GAN, SIZE)
+   if NETWORK == 'resnet': errD_fake = netDResnet(gen_images, y, BATCH_SIZE, GAN, SIZE, reuse=True)
 
    # Important! no initial activations done on the last layer for D, so if one method needs an activation, do it here
    e = 1e-12
@@ -125,7 +145,8 @@ if __name__ == '__main__':
       # gradient penalty
       epsilon = tf.random_uniform([], 0.0, 1.0)
       x_hat = real_images*epsilon + (1-epsilon)*gen_images
-      d_hat = netD(x_hat, y, BATCH_SIZE, GAN, SIZE, reuse=True)
+      if NETWORK == 'dcgan': d_hat = netD(x_hat, y, BATCH_SIZE, GAN, SIZE, reuse=True)
+      if NETWORK == 'resnet': d_hat = netDResnet(x_hat, y, BATCH_SIZE, GAN, SIZE, reuse=True)
       gradients = tf.gradients(d_hat, x_hat)[0]
       slopes = tf.sqrt(tf.reduce_sum(tf.square(gradients), reduction_indices=[1]))
       gradient_penalty = 10*tf.reduce_mean((slopes-1.0)**2)
@@ -147,13 +168,11 @@ if __name__ == '__main__':
    d_vars = [var for var in t_vars if 'd_' in var.name]
    g_vars = [var for var in t_vars if 'g_' in var.name]
 
-   # optimize G
    G_train_op = tf.train.AdamOptimizer(learning_rate=lr,beta1=beta1,beta2=beta2).minimize(errG, var_list=g_vars, global_step=global_step)
-   # optimize D
    D_train_op = tf.train.AdamOptimizer(learning_rate=lr,beta1=beta1,beta2=beta2).minimize(errD, var_list=d_vars)
 
    saver = tf.train.Saver(max_to_keep=1)
-   init = tf.group(tf.global_variables_initializer(), tf.local_variables_initializer())
+   init  = tf.group(tf.global_variables_initializer(), tf.local_variables_initializer())
    sess  = tf.Session()
    sess.run(init)
 
@@ -184,7 +203,7 @@ if __name__ == '__main__':
    step = sess.run(global_step)
    
    print 'Loading data...'
-   train_images, train_annots, train_ids, test_images, test_annots, test_ids = data_ops.load_zoo(DATA_DIR, SIZE)
+   train_images, train_annots, train_ids, test_images, test_annots, test_ids = data_ops.load_zoo(DATA_DIR, SIZE, crop=CROP)
    print train_images.shape
    print train_annots.shape
    print test_images.shape
@@ -205,15 +224,22 @@ if __name__ == '__main__':
       # train the discriminator
       for critic_itr in range(n_critic):
          idx          = np.random.choice(np.arange(train_len), BATCH_SIZE, replace=False)
-         batch_z      = np.random.normal(-1.0, 1.0, size=[BATCH_SIZE, 100]).astype(np.float32)
+         batch_z      = np.random.normal(-1.0, 1.0, size=[BATCH_SIZE, 128]).astype(np.float32)
          batch_y      = train_annots[idx]
          batch_images = train_images[idx]
+
+         # randomly flip images left right or up down
+         r = random.random()
+         if r < 0.5: batch_images = np.fliplr(batch_images)
+
+         r = random.random()
+         if r < 0.5: batch_images = np.flipud(batch_images)
 
          sess.run(D_train_op, feed_dict={z:batch_z, y:batch_y, real_images:batch_images, mask:classes})
       
       # now train the generator once! use normal distribution, not uniform!!
       idx          = np.random.choice(np.arange(train_len), BATCH_SIZE, replace=False)
-      batch_z      = np.random.normal(-1.0, 1.0, size=[BATCH_SIZE, 100]).astype(np.float32)
+      batch_z      = np.random.normal(-1.0, 1.0, size=[BATCH_SIZE, 128]).astype(np.float32)
       batch_y      = train_annots[idx]
       batch_images = train_images[idx]
 
@@ -233,7 +259,7 @@ if __name__ == '__main__':
          saver.export_meta_graph(CHECKPOINT_DIR+'checkpoint-'+str(step)+'.meta')
 
          idx          = np.random.choice(np.arange(test_len), BATCH_SIZE, replace=False)
-         batch_z      = np.random.normal(-1.0, 1.0, size=[BATCH_SIZE, 100]).astype(np.float32)
+         batch_z      = np.random.normal(-1.0, 1.0, size=[BATCH_SIZE, 128]).astype(np.float32)
          batch_y      = test_annots[idx]
          batch_images = test_images[idx]
          batch_ids    = test_ids[idx]
