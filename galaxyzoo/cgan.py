@@ -161,9 +161,17 @@ if __name__ == '__main__':
       beta2    = 0.9
       lr       = 1e-4
 
+   if PREDICT:
+      print 'Using D as a prediction network as well...'
+      errP1 = tf.nn.l2_loss(y-pred_real)
+      errP2 = tf.nn.l2_loss(y-pred_fake)
+      errP = (errP1+errP2)/2.
+
    # tensorboard summaries
    tf.summary.scalar('d_loss', errD)
    tf.summary.scalar('g_loss', errG)
+   try: tf.summary.scalar('predict_loss', errP)
+   except: pass
    merged_summary_op = tf.summary.merge_all()
 
    # get all trainable variables, and split by network G and network D
@@ -253,7 +261,8 @@ if __name__ == '__main__':
 
       summary_writer.add_summary(summary, step)
 
-      print 'epoch:',epoch_num,'step:',step,'D loss:',D_loss,'G_loss:',G_loss,'time:',time.time()-start
+      try: print 'epoch:',epoch_num,'step:',step,'D loss:',D_loss,'G_loss:',G_loss,'errP:',errP
+      except: print 'epoch:',epoch_num,'step:',step,'D loss:',D_loss,'G_loss:',G_loss
       step += 1
     
       if step%500 == 0:
