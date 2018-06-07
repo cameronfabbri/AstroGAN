@@ -58,7 +58,7 @@ if __name__ == '__main__':
    # account for redshift attribute
    #if classes[-1] == 1: y_dim += 1
    # placeholders for data going into the network
-   z           = tf.placeholder(tf.float32, shape=(BATCH_SIZE, 100), name='z')
+   z           = tf.placeholder(tf.float32, shape=(BATCH_SIZE, 128), name='z')
    y           = tf.placeholder(tf.float32, shape=(BATCH_SIZE, y_dim), name='y')
 
    # generated images
@@ -101,7 +101,7 @@ if __name__ == '__main__':
       canvas[:, end_x+5] = 0
       
       for count in range(MAX_GEN):
-         batch_z = np.random.normal(0.0, 1.0, size=[BATCH_SIZE, 100]).astype(np.float32)
+         batch_z = np.random.normal(0.0, 1.0, size=[BATCH_SIZE, 128]).astype(np.float32)
          batch_y = np.expand_dims(t_annot, 0)
          img = np.asarray(sess.run([gen_images], feed_dict={z:batch_z, y:batch_y})[0])[0]
          img = (img+1.)

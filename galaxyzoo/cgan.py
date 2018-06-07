@@ -106,11 +106,14 @@ if __name__ == '__main__':
    # generated images
    if NETWORK == 'dcgan': gen_images = netG(z, y, UPSAMPLE)
    if NETWORK == 'resnet': gen_images = netGResnet(z, y, UPSAMPLE)
+   if NETWORK == 'hdcgan': gen_images = netGHD(z, y, UPSAMPLE)
 
    # get the output from D on the real and fake data
    if NETWORK == 'dcgan': errD_real, pred_real = netD(real_images, y, GAN, SIZE, PREDICT)
    if NETWORK == 'dcgan': errD_fake, pred_fake = netD(gen_images, y, GAN, SIZE, PREDICT, reuse=True)
-   
+   if NETWORK == 'hdcgan': errD_real = netDHD(real_images, y, GAN, SIZE, PREDICT)
+   if NETWORK == 'hdcgan': errD_fake = netDHD(gen_images, y, GAN, SIZE, PREDICT, reuse=True)
+
    if NETWORK == 'resnet': errD_real = netDResnet(real_images, y, GAN, SIZE)
    if NETWORK == 'resnet': errD_fake = netDResnet(gen_images, y, GAN, SIZE, reuse=True)
 
@@ -163,9 +166,10 @@ if __name__ == '__main__':
 
    if PREDICT:
       print 'Using D as a prediction network as well...'
-      errP1 = tf.nn.l2_loss(y-pred_real)
-      errP2 = tf.nn.l2_loss(y-pred_fake)
-      errP = (errP1+errP2)/2.
+      #errP1 = tf.nn.l2_loss(y-pred_real)
+      #errP2 = tf.nn.l2_loss(y-pred_fake)
+      #errP = (errP1+errP2)/2.
+      errP = tf.nn.l2_loss(y-pred_fake)
 
       errG = errG + errP
 
@@ -267,8 +271,8 @@ if __name__ == '__main__':
 
       summary_writer.add_summary(summary, step)
 
-      try: print 'epoch:',epoch_num,'step:',step,'D loss:',D_loss,'G_loss:',G_loss,'P_loss:',P_loss
-      except: print 'epoch:',epoch_num,'step:',step,'D loss:',D_loss,'G_loss:',G_loss
+      if PREDICT: print 'epoch:',epoch_num,'step:',step,'D loss:',D_loss,'G_loss:',G_loss,'P_loss:',P_loss
+      else: print 'epoch:',epoch_num,'step:',step,'D loss:',D_loss,'G_loss:',G_loss
       step += 1
     
       if step%500 == 0:

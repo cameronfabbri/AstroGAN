@@ -9,8 +9,6 @@
    attributes in the test set, z is sampled randomly, so you can have multiple galaxies generated
    with the same attributes.
 
-   Also this counts via batches (batch size 64), so if you say generate 65 images it'll generate 128
-
 '''
 import tensorflow.contrib.layers as tcl
 from matplotlib.pyplot import cm
@@ -41,23 +39,29 @@ if __name__ == '__main__':
    parser.add_argument('--CHECKPOINT_DIR', required=True,help='checkpoint directory',type=str)
    parser.add_argument('--OUTPUT_DIR',     required=False,help='Directory to save data', type=str,default='./')
    parser.add_argument('--MAX_GEN',        required=False,help='Maximum images to generate',  type=int,default=5)
-   parser.add_argument('--SIZE',           required=False,help='Size of images', type=int,default=64)
-   parser.add_argument('--DATA_DIR',       required=True,help='Data directory',type=str)
    a = parser.parse_args()
 
    CHECKPOINT_DIR = a.CHECKPOINT_DIR
    OUTPUT_DIR     = a.OUTPUT_DIR
    MAX_GEN        = a.MAX_GEN
-   DATA_DIR       = a.DATA_DIR
-   SIZE           = a.SIZE
 
    BATCH_SIZE = 1
+
+   # load everything from the experiment file
+   exp_pkl  = open(CHECKPOINT_DIR+'info.pkl', 'rb')
+   info     = pickle.load(exp_pkl)
+   DATA_DIR = info['DATA_DIR']
+   UPSAMPLE = info['UPSAMPLE']
+   CLASSES  = info['CLASSES']
+   NETWORK  = info['NETWORK']
+   CROP     = info['CROP']
+   SIZE     = info['SIZE']
 
    try: os.makedirs(OUTPUT_DIR)
    except: pass
 
    # placeholders for data going into the network
-   z           = tf.placeholder(tf.float32, shape=(BATCH_SIZE, 100), name='z')
+   z           = tf.placeholder(tf.float32, shape=(BATCH_SIZE, 128), name='z')
    y           = tf.placeholder(tf.float32, shape=(BATCH_SIZE, 37), name='y')
    mask        = tf.placeholder(tf.float32, shape=(BATCH_SIZE, 37), name='mask')
 
@@ -65,10 +69,10 @@ if __name__ == '__main__':
    y = tf.multiply(y,mask)
 
    # repeat the classes mask to be of batch size
-   #classes = np.array([classes,]*BATCH_SIZE)
+   classes = np.array([classes,]*BATCH_SIZE)
 
    # generated images
-   gen_images = netG(z, y, BATCH_SIZE, SIZE)
+   gen_images = netG(z, y, UPSAMPLE)
    
    saver = tf.train.Saver(max_to_keep=1)
    init = tf.group(tf.global_variables_initializer(), tf.local_variables_initializer())
@@ -88,7 +92,7 @@ if __name__ == '__main__':
          exit()
 
    print 'Loading data...'
-   train_images, train_annots, train_ids, test_images, test_annots, test_ids = data_ops.load_zoo(DATA_DIR, SIZE)
+   train_images, train_annots, train_ids, test_images, test_annots, test_ids = data_ops.load_zoo(DATA_DIR, SIZE,crop=CROP)
    test_len = len(test_annots)
 
    num_gen = 0
@@ -97,7 +101,7 @@ if __name__ == '__main__':
    print 'generating data...'
    while num_gen < MAX_GEN:
 
-      batch_z = np.random.normal(-1.0, 1.0, size=[BATCH_SIZE, 100]).astype(np.float32)
+      batch_z = np.random.normal(-1.0, 1.0, size=[BATCH_SIZE, 128]).astype(np.float32)
       idx     = np.random.choice(np.arange(test_len), BATCH_SIZE, replace=False)
       batch_y = test_annots[idx]
 
@@ -111,12 +115,17 @@ if __name__ == '__main__':
          img = np.clip(img, 0, 255).astype(np.uint8)
          img = np.reshape(img, (64, 64, -1))
 
+
          # save out image, z, and y*classes
          misc.imsave(OUTPUT_DIR+str(num_gen)+'.png', img)
+         
+         # Add in poisson noise and save new
+         noise = np.random.poisson(img)
+         img = img+noise
+         misc.imsave(OUTPUT_DIR+str(num_gen)+'_noise.png', img)
 
          num_gen += 1
 
    # save out numpy arrays
    np.save(OUTPUT_DIR+'z_vectors.npy', np.asarray(gen_z))
    np.save(OUTPUT_DIR+'y_vectors.npy', np.asarray(gen_y))
-
