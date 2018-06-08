@@ -127,7 +127,7 @@ def crop_center(img,cropx,cropy):
    return img[starty:starty+cropy,startx:startx+cropx]
 
 def load_zoo(data_dir, hot=False):
-
+   
    train_paths = []
    test_paths  = []
 
@@ -158,8 +158,11 @@ def load_zoo(data_dir, hot=False):
       # converts the array to 1 or 0
       if hot: attribute = np.where(attribute > 0.5, 1, 0)
       test_attributes.append(attribute)
+   
+   train_ids = [ntpath.basename(x.split('.')[0]) for x in train_paths]
+   test_ids  = [ntpath.basename(x.split('.')[0]) for x in test_paths]
 
-   return np.asarray(train_paths), np.asarray(train_attributes), np.asarray(test_paths), np.asarray(test_attributes)
+   return np.asarray(train_paths), np.asarray(train_attributes), np.asarray(train_ids), np.asarray(test_paths), np.asarray(test_attributes), np.asarray(test_ids)
 
 '''
    Galaxy zoo dataset.

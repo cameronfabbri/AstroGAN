@@ -61,7 +61,7 @@ if __name__ == '__main__':
    except: pass
 
    # placeholders for data going into the network
-   z           = tf.placeholder(tf.float32, shape=(BATCH_SIZE, 128), name='z')
+   z           = tf.placeholder(tf.float32, shape=(BATCH_SIZE, 100), name='z')
    y           = tf.placeholder(tf.float32, shape=(BATCH_SIZE, 37), name='y')
    mask        = tf.placeholder(tf.float32, shape=(BATCH_SIZE, 37), name='mask')
 
@@ -101,7 +101,7 @@ if __name__ == '__main__':
    print 'generating data...'
    while num_gen < MAX_GEN:
 
-      batch_z = np.random.normal(-1.0, 1.0, size=[BATCH_SIZE, 128]).astype(np.float32)
+      batch_z = np.random.normal(-1.0, 1.0, size=[BATCH_SIZE, 100]).astype(np.float32)
       idx     = np.random.choice(np.arange(test_len), BATCH_SIZE, replace=False)
       batch_y = test_annots[idx]
 

@@ -30,12 +30,12 @@ if __name__ == '__main__':
    # params
    parser = argparse.ArgumentParser()
    parser.add_argument('--GAN',        required=False,help='Type of GAN loss to use',  type=str,  default='wgan')
+   parser.add_argument('--HOT',        required=False,help='Use binary vectors',       type=int,  default=0)
    parser.add_argument('--CROP',       required=False,help='Center crop images or not',type=int,  default=0)
    parser.add_argument('--SIZE',       required=False,help='Output size of generator', type=int,  default=64)
    parser.add_argument('--BETA1',      required=False,help='beta1 ADAM parameter',     type=float,default=0.)
    parser.add_argument('--EPOCHS',     required=False,help='Maximum number of epochs', type=int,  default=100)
    parser.add_argument('--NETWORK',    required=False,help='Network to use',           type=str,  default='dcgan')
-   parser.add_argument('--PREDICT',    required=False,help='D predicts morphology',    type=int,  default=0)
    parser.add_argument('--UPSAMPLE',   required=False,help='Method to upsample in G',  type=str,  default='transpose')
    parser.add_argument('--DATA_DIR',   required=True, help='Directory where data is',  type=str,  default='./')
    parser.add_argument('--BATCH_SIZE', required=False,help='Batch size',               type=int,  default=64)
@@ -46,7 +46,7 @@ if __name__ == '__main__':
    CROP           = bool(a.CROP)
    BETA1          = a.BETA1
    EPOCHS         = a.EPOCHS
-   PREDICT        = bool(a.PREDICT)
+   HOT            = bool(a.HOT)
    NETWORK        = a.NETWORK
    DATA_DIR       = a.DATA_DIR
    UPSAMPLE       = a.UPSAMPLE
@@ -63,7 +63,7 @@ if __name__ == '__main__':
                     +'/CLASSES_'+str(cn)\
                     +'/NETWORK_'+NETWORK\
                     +'/CROP_'+str(CROP)\
-                    +'/PREDICT_'+str(PREDICT)\
+                    +'/HOT_'+str(HOT)\
                     +'/SIZE_'+str(SIZE)\
                     +'/'
 
@@ -93,7 +93,7 @@ if __name__ == '__main__':
    global_step = tf.Variable(0, name='global_step', trainable=False)
    # placeholders for data going into the network
    real_images = tf.placeholder(tf.float32, shape=(BATCH_SIZE, SIZE, SIZE, 3), name='real_images')
-   z           = tf.placeholder(tf.float32, shape=(BATCH_SIZE, 128), name='z')
+   z           = tf.placeholder(tf.float32, shape=(BATCH_SIZE, 100), name='z')
    y           = tf.placeholder(tf.float32, shape=(BATCH_SIZE, 37), name='y')
    mask        = tf.placeholder(tf.float32, shape=(BATCH_SIZE, 37), name='mask')
 
@@ -109,10 +109,10 @@ if __name__ == '__main__':
    if NETWORK == 'hdcgan': gen_images = netGHD(z, y, UPSAMPLE)
 
    # get the output from D on the real and fake data
-   if NETWORK == 'dcgan': errD_real, pred_real = netD(real_images, y, GAN, SIZE, PREDICT)
-   if NETWORK == 'dcgan': errD_fake, pred_fake = netD(gen_images, y, GAN, SIZE, PREDICT, reuse=True)
-   if NETWORK == 'hdcgan': errD_real = netDHD(real_images, y, GAN, SIZE, PREDICT)
-   if NETWORK == 'hdcgan': errD_fake = netDHD(gen_images, y, GAN, SIZE, PREDICT, reuse=True)
+   if NETWORK == 'dcgan': errD_real = netD(real_images, y, GAN, SIZE)
+   if NETWORK == 'dcgan': errD_fake = netD(gen_images, y, GAN, SIZE, reuse=True)
+   if NETWORK == 'hdcgan': errD_real = netDHD(real_images, y, GAN, SIZE)
+   if NETWORK == 'hdcgan': errD_fake = netDHD(gen_images, y, GAN, SIZE, reuse=True)
 
    if NETWORK == 'resnet': errD_real = netDResnet(real_images, y, GAN, SIZE)
    if NETWORK == 'resnet': errD_fake = netDResnet(gen_images, y, GAN, SIZE, reuse=True)
@@ -151,7 +151,7 @@ if __name__ == '__main__':
       # gradient penalty
       epsilon = tf.random_uniform([], 0.0, 1.0)
       x_hat = real_images*epsilon + (1-epsilon)*gen_images
-      if NETWORK == 'dcgan': d_hat, m = netD(x_hat, y, GAN, SIZE, PREDICT, reuse=True)
+      if NETWORK == 'dcgan': d_hat  = netD(x_hat, y, GAN, SIZE, reuse=True)
       if NETWORK == 'resnet': d_hat = netDResnet(x_hat, y, GAN, SIZE, reuse=True)
       gradients = tf.gradients(d_hat, x_hat)[0]
       slopes = tf.sqrt(tf.reduce_sum(tf.square(gradients), reduction_indices=[1]))
@@ -164,20 +164,9 @@ if __name__ == '__main__':
       beta2    = 0.9
       lr       = 1e-4
 
-   if PREDICT:
-      print 'Using D as a prediction network as well...'
-      #errP1 = tf.nn.l2_loss(y-pred_real)
-      #errP2 = tf.nn.l2_loss(y-pred_fake)
-      #errP = (errP1+errP2)/2.
-      errP = tf.nn.l2_loss(y-pred_fake)
-
-      errG = errG + errP
-
    # tensorboard summaries
    tf.summary.scalar('d_loss', errD)
    tf.summary.scalar('g_loss', errG)
-   try: tf.summary.scalar('predict_loss', errP)
-   except: pass
    merged_summary_op = tf.summary.merge_all()
 
    # get all trainable variables, and split by network G and network D
@@ -218,17 +207,13 @@ if __name__ == '__main__':
    ########################################### training portion
 
    step = sess.run(global_step)
-   
+
    print 'Loading data...'
-   train_images, train_annots, train_ids, test_images, test_annots, test_ids = data_ops.load_zoo(DATA_DIR, SIZE, crop=CROP)
-   print train_images.shape
-   print train_annots.shape
-   print test_images.shape
-   print test_annots.shape
+   train_paths, train_annots, train_ids, test_paths, test_annots, test_ids = data_ops.load_zoo(DATA_DIR, hot=HOT)
    print 'Done'
 
-   train_len = len(train_annots)
-   test_len  = len(test_annots)
+   train_len = len(train_paths)
+   test_len  = len(test_paths)
 
    print 'train num:',train_len
    
@@ -238,41 +223,42 @@ if __name__ == '__main__':
       epoch_num = step/(train_len/BATCH_SIZE)
       start = time.time()
 
-      # train the discriminator
-      for critic_itr in range(n_critic):
-         idx          = np.random.choice(np.arange(train_len), BATCH_SIZE, replace=False)
-         batch_z      = np.random.normal(-1.0, 1.0, size=[BATCH_SIZE, 128]).astype(np.float32)
-         batch_y      = train_annots[idx]
-         batch_images = train_images[idx]
+      idx          = np.random.choice(np.arange(train_len), BATCH_SIZE, replace=False)
+      batch_z      = np.random.normal(-1.0, 1.0, size=[BATCH_SIZE, 100]).astype(np.float32)
+      batch_y      = train_annots[idx]
+      batch_paths  = train_paths[idx]
+
+      batch_images = np.empty((BATCH_SIZE, SIZE, SIZE, 3), dtype=np.float32)
+
+      bi = 0
+      for img_p in batch_paths:
+
+         image = misc.imread(img_p)
+         image = misc.imresize(image, (SIZE, SIZE, 3))
+         image = data_ops.normalize(image)
+
+         if CROP: image = data_ops.crop_center(image, 212, 212)
 
          # randomly flip images left right or up down
          r = random.random()
-         if r < 0.5: batch_images = np.fliplr(batch_images)
-
+         if r < 0.5: image = np.fliplr(image)
          r = random.random()
-         if r < 0.5: batch_images = np.flipud(batch_images)
+         if r < 0.5: image = np.flipud(image)
+         batch_images[bi, ...] = image
+         bi += 1
 
+      # train the discriminator
+      for critic_itr in range(n_critic):
          sess.run(D_train_op, feed_dict={z:batch_z, y:batch_y, real_images:batch_images, mask:classes})
       
-      # now train the generator once! use normal distribution, not uniform!!
-      idx          = np.random.choice(np.arange(train_len), BATCH_SIZE, replace=False)
-      batch_z      = np.random.normal(-1.0, 1.0, size=[BATCH_SIZE, 128]).astype(np.float32)
-      batch_y      = train_annots[idx]
-      batch_images = train_images[idx]
-
       # now get all losses and summary *without* performing a training step - for tensorboard and printing
       sess.run(G_train_op, feed_dict={z:batch_z, y:batch_y, real_images:batch_images, mask:classes})
-      if PREDICT:
-         D_loss, G_loss, P_loss, summary = sess.run([errD, errG, errP, merged_summary_op],
-                                 feed_dict={z:batch_z, y:batch_y, real_images:batch_images, mask:classes})
-      else:
-         D_loss, G_loss, summary = sess.run([errD, errG, merged_summary_op],
-                                 feed_dict={z:batch_z, y:batch_y, real_images:batch_images, mask:classes})
+      D_loss, G_loss, summary = sess.run([errD, errG, merged_summary_op],
+                              feed_dict={z:batch_z, y:batch_y, real_images:batch_images, mask:classes})
 
       summary_writer.add_summary(summary, step)
 
-      if PREDICT: print 'epoch:',epoch_num,'step:',step,'D loss:',D_loss,'G_loss:',G_loss,'P_loss:',P_loss
-      else: print 'epoch:',epoch_num,'step:',step,'D loss:',D_loss,'G_loss:',G_loss
+      print 'epoch:',epoch_num,'step:',step,'D loss:',D_loss,'G_loss:',G_loss
       step += 1
     
       if step%500 == 0:
@@ -280,12 +266,12 @@ if __name__ == '__main__':
          saver.save(sess, CHECKPOINT_DIR+'checkpoint-'+str(step))
          saver.export_meta_graph(CHECKPOINT_DIR+'checkpoint-'+str(step)+'.meta')
 
-         idx          = np.random.choice(np.arange(test_len), BATCH_SIZE, replace=False)
-         batch_z      = np.random.normal(-1.0, 1.0, size=[BATCH_SIZE, 128]).astype(np.float32)
-         batch_y      = test_annots[idx]
-         batch_images = test_images[idx]
-         batch_ids    = test_ids[idx]
-         gen_imgs = np.squeeze(np.asarray(sess.run([gen_images], feed_dict={z:batch_z, y:batch_y, real_images:batch_images, mask:classes})))
+         idx       = np.random.choice(np.arange(test_len), BATCH_SIZE, replace=False)
+         batch_z   = np.random.normal(-1.0, 1.0, size=[BATCH_SIZE, 100]).astype(np.float32)
+         batch_y   = test_annots[idx]
+         batch_ids = test_ids[idx]
+         
+         gen_imgs = np.squeeze(np.asarray(sess.run([gen_images], feed_dict={z:batch_z, y:batch_y, mask:classes})))
 
          num = 0
          # gotta multiply by mask here

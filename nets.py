@@ -50,7 +50,7 @@ def netG(z, y, UPSAMPLE):
 '''
    Discriminator network. No batch norm when using WGAN
 '''
-def netD(input_images, y, GAN, SIZE, PREDICT, reuse=False):
+def netD(input_images, y, GAN, SIZE, reuse=False):
 
    print 'DISCRIMINATOR reuse = '+str(reuse)
    sc = tf.get_variable_scope()
@@ -91,14 +91,110 @@ def netD(input_images, y, GAN, SIZE, PREDICT, reuse=False):
       conv = tcl.conv2d(conv, 1, 4, 1, activation_fn=tf.identity, weights_initializer=tf.random_normal_initializer(stddev=0.02), scope='d_conv6')
       print 'conv6:',conv
 
-      # if true, also predict the morphology
-      if PREDICT: 
-         fc = tcl.fully_connected(tcl.flatten(conv), 37, activation_fn=tf.identity, weights_initializer=tf.random_normal_initializer(stddev=0.02), scope='d_fc')
+      print 'END D\n'
+      return conv
 
-         return conv, fc
+
+'''
+   Architecture from the paper HDCGANs
+'''
+def netGHD(z, y, UPSAMPLE):
+
+   # concat attribute y onto z
+   z = tf.concat([z,y], axis=1)
+   z = tcl.fully_connected(z, 4*4*512, activation_fn=tf.identity, weights_initializer=tf.random_normal_initializer(stddev=0.02), scope='g_z')
+   z = tf.reshape(z, [-1, 4, 4, 512])
+   # their implementation has this just linear
+   #z = tcl.batch_norm(z)
+   #z = tf.nn.relu(z)
+   print 'z:',z
+
+   conv = tcl.convolution2d_transpose(z, 512, 4, 1, activation_fn=tf.identity, weights_initializer=tf.random_normal_initializer(stddev=0.02), scope='g_conv1')
+   conv = tcl.batch_norm(conv)
+   conv = selu(conv)
+   print 'conv1:',conv
+   
+   conv = tcl.convolution2d_transpose(z, 512, 4, 2, activation_fn=tf.identity, weights_initializer=tf.random_normal_initializer(stddev=0.02), scope='g_conv2')
+   conv = tcl.batch_norm(conv)
+   conv = selu(conv)
+   print 'conv2:',conv
+   
+   conv = tcl.convolution2d_transpose(conv, 256, 4, 2, activation_fn=tf.identity, weights_initializer=tf.random_normal_initializer(stddev=0.02), scope='g_conv3')
+   conv = tcl.batch_norm(conv)
+   conv = selu(conv)
+   print 'conv3:',conv
+   
+   conv = tcl.convolution2d_transpose(conv, 128, 4, 2, activation_fn=tf.identity, weights_initializer=tf.random_normal_initializer(stddev=0.02), scope='g_conv4')
+   conv = tcl.batch_norm(conv)
+   conv = selu(conv)
+   print 'conv4:',conv
+   
+   conv = tcl.convolution2d_transpose(conv, 64, 4, 2, activation_fn=tf.identity, weights_initializer=tf.random_normal_initializer(stddev=0.02), scope='g_conv5')
+   conv = tcl.batch_norm(conv)
+   conv = selu(conv)
+   print 'conv5:',conv
+   
+   conv = tcl.convolution2d_transpose(conv, 32, 4, 2, activation_fn=tf.identity, weights_initializer=tf.random_normal_initializer(stddev=0.02), scope='g_conv6')
+   conv = tcl.batch_norm(conv)
+   conv = selu(conv)
+   print 'conv6:',conv
+
+   conv = tcl.convolution2d_transpose(conv, 3, 4, 2, activation_fn=tf.nn.tanh, weights_initializer=tf.random_normal_initializer(stddev=0.02), scope='g_conv7')
+   conv = tcl.batch_norm(conv)
+   conv = selu(conv)
+   print 'conv7:',conv
+   print
+   print 'END G'
+   print
+   return conv
+
+
+'''
+   Discriminator network from HDCGANs paper
+'''
+def netDHD(input_images, y, GAN, SIZE, PREDICT, reuse=False):
+
+   print 'DISCRIMINATOR reuse = '+str(reuse)
+   sc = tf.get_variable_scope()
+   with tf.variable_scope(sc, reuse=reuse):
+
+      y_dim = int(y.get_shape().as_list()[-1])
+
+      # reshape so it's batchx1x1xy_size
+      y = tf.reshape(y, shape=[-1, 1, 1, y_dim])
+      print 'input_images:',input_images
+      input_ = conv_cond_concat(input_images, y)
+
+      conv = tcl.conv2d(input_, 32, 4, 2, activation_fn=tf.identity, weights_initializer=tf.random_normal_initializer(stddev=0.02), scope='d_conv1')
+      conv = selu(conv)
+      print 'conv1:',conv
+      
+      conv = tcl.conv2d(conv, 64, 4, 2, activation_fn=tf.identity, weights_initializer=tf.random_normal_initializer(stddev=0.02), scope='d_conv2')
+      conv = tcl.batch_norm(conv)
+      conv = selu(conv)
+      print 'conv2:',conv
+
+      conv = tcl.conv2d(conv, 128, 4, 2, activation_fn=tf.identity, weights_initializer=tf.random_normal_initializer(stddev=0.02), scope='d_conv3')
+      conv = tcl.batch_norm(conv)
+      conv = selu(conv)
+      print 'conv3:',conv
+      
+      conv = tcl.conv2d(conv, 256, 4, 2, activation_fn=tf.identity, weights_initializer=tf.random_normal_initializer(stddev=0.02), scope='d_conv4')
+      conv = tcl.batch_norm(conv)
+      conv = selu(conv)
+      print 'conv4:',conv
+      
+      conv = tcl.conv2d(conv, 512, 4, 2, activation_fn=tf.identity, weights_initializer=tf.random_normal_initializer(stddev=0.02), scope='d_conv5')
+      conv = tcl.batch_norm(conv)
+      conv = selu(conv)
+      print 'conv5:',conv
+      
+      conv = tcl.conv2d(conv, 512, 4, 1, activation_fn=tf.identity, weights_initializer=tf.random_normal_initializer(stddev=0.02), scope='d_conv6')
+      print 'conv5:',conv
 
       print 'END D\n'
-      return conv, None
+      return conv
+
 
 def netGResnet(z, y, SIZE):
    
