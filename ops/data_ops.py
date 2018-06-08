@@ -126,9 +126,43 @@ def crop_center(img,cropx,cropy):
    starty = y//2-(cropy//2)    
    return img[starty:starty+cropy,startx:startx+cropx]
 
+def load_zoo(data_dir, hot=False):
+
+   train_paths = []
+   test_paths  = []
+
+   train_attributes = []
+   test_attributes  = []
+
+   train_attributes_f = open(data_dir+'images_training_rev1/train.csv')
+   test_attributes_f  = open(data_dir+'images_training_rev1/test.csv')
+
+   # get train paths
+   for line in train_attributes_f:
+      line  = line.rstrip()
+      line_ = line.split(',')
+      gid   = line_[0]
+      train_paths.append(data_dir+'images_training_rev1/train/'+gid+'.jpg')
+      attribute = np.asarray(line_[1:]).astype(float)
+      # converts the array to 1 or 0
+      if hot: attribute = np.where(attribute > 0.5, 1, 0)
+      train_attributes.append(attribute)
+
+   # get test paths
+   for line in test_attributes_f:
+      line  = line.rstrip()
+      line_ = line.split(',')
+      gid   = line_[0]
+      test_paths.append(data_dir+'images_training_rev1/test/'+gid+'.jpg')
+      attribute = np.asarray(line_[1:]).astype(float)
+      # converts the array to 1 or 0
+      if hot: attribute = np.where(attribute > 0.5, 1, 0)
+      test_attributes.append(attribute)
+
+   return np.asarray(train_paths), np.asarray(train_attributes), np.asarray(test_paths), np.asarray(test_attributes)
+
 '''
    Galaxy zoo dataset.
-'''
 def load_zoo(data_dir, size, crop=True):
 
    train_images = sorted(glob.glob(data_dir+'images_training_rev1/train/*.jpg'))
@@ -144,37 +178,38 @@ def load_zoo(data_dir, size, crop=True):
    for img, id_ in zip(test_images, test_ids):
       id_dict[int(id_)] = img
 
-   train_images     = []
+   #train_images     = []
    train_attributes = []
 
-   test_images     = []
+   #test_images     = []
    test_attributes = []
 
    d = 0
    with open(data_dir+'training_solutions_rev1.csv', 'r') as f:
-      for line in f:
+      for line in tqdm(f):
          if d == 0:
             d = 1
             continue
          line = np.asarray(line.split(',')).astype('float32')
          im_id = int(line[0])
-         img = misc.imread(id_dict[im_id]).astype('float32')
-         if crop: img = crop_center(img, 212, 212)
-         img = misc.imresize(img, (size,size))
-         img = normalize(img)
+         #img = misc.imread(id_dict[im_id]).astype('float32')
+         #if crop: img = crop_center(img, 212, 212)
+         #img = misc.imresize(img, (size,size))
+         #img = normalize(img)
          att = line[1:]
 
          # remember train_ids is all str
          if str(im_id) in train_ids:
-            train_images.append(img)
+            #train_images.append(img)
             train_attributes.append(att)
          else:
-            test_images.append(img)
+            #test_images.append(img)
             test_attributes.append(att)
 
          d += 1
          #if d == 65: break
 
-   return np.asarray(train_images), np.asarray(train_attributes), np.asarray(train_ids), np.asarray(test_images), np.asarray(test_attributes), np.asarray(test_ids)
+   #return np.asarray(train_images), np.asarray(train_attributes), np.asarray(train_ids), np.asarray(test_images), np.asarray(test_attributes), np.asarray(test_ids)
 
+'''
 
