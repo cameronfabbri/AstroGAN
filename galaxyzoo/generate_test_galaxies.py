@@ -39,7 +39,8 @@ if __name__ == '__main__':
    CHECKPOINT_DIR = a['CHECKPOINT_DIR']
    DATA_DIR       = a['DATA_DIR']
    CLASSES        = a['CLASSES']
-  
+   UPSAMPLE       = a['UPSAMPLE']
+   SIZE           = a['SIZE'] 
    BATCH_SIZE = 1
 
    print 'Loading data...'
@@ -58,11 +59,11 @@ if __name__ == '__main__':
    # account for redshift attribute
    #if classes[-1] == 1: y_dim += 1
    # placeholders for data going into the network
-   z           = tf.placeholder(tf.float32, shape=(BATCH_SIZE, 128), name='z')
+   z           = tf.placeholder(tf.float32, shape=(BATCH_SIZE, 100), name='z')
    y           = tf.placeholder(tf.float32, shape=(BATCH_SIZE, y_dim), name='y')
 
    # generated images
-   gen_images = netG(z, y, BATCH_SIZE, 64)
+   gen_images = netG(z, y, UPSAMPLE)
    
    saver = tf.train.Saver(max_to_keep=1)
    init = tf.group(tf.global_variables_initializer(), tf.local_variables_initializer())
@@ -84,6 +85,9 @@ if __name__ == '__main__':
    print test_len,'testing images'
 
    for t_img, t_annot, t_gid in zip(test_images, test_annots, test_ids):
+      t_img = misc.imread(t_img)
+      t_img = misc.imresize(t_img, (SIZE, SIZE, 3))
+      t_img = data_ops.normalize(t_img)
       #misc.imsave(OUTPUT_DIR+t_gid+'_.png',t_img)
       canvas = 255*np.ones((84, (MAX_GEN+1)*74+10 , 3), dtype=np.uint8)
       start_x = 10
@@ -101,7 +105,7 @@ if __name__ == '__main__':
       canvas[:, end_x+5] = 0
       
       for count in range(MAX_GEN):
-         batch_z = np.random.normal(0.0, 1.0, size=[BATCH_SIZE, 128]).astype(np.float32)
+         batch_z = np.random.normal(0.0, 1.0, size=[BATCH_SIZE, 100]).astype(np.float32)
          batch_y = np.expand_dims(t_annot, 0)
          img = np.asarray(sess.run([gen_images], feed_dict={z:batch_z, y:batch_y})[0])[0]
          img = (img+1.)
@@ -113,4 +117,4 @@ if __name__ == '__main__':
          canvas[start_y:end_y, start_x:end_x, :] = img
          start_x = end_x + 10
          
-      misc.imsave(OUTPUT_DIR+t_gid+'.png', canvas)
+      misc.imsave(OUTPUT_DIR+'/'+t_gid+'.png', canvas)

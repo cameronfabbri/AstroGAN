@@ -148,6 +148,9 @@ if __name__ == '__main__':
       errD = tf.reduce_mean(errD_real) - tf.reduce_mean(errD_fake)
       errG = tf.reduce_mean(errD_fake)
 
+      #errG = tf.reduce_mean(errD_fake)
+      #errD = tf.reduce_mean(errD_fake) - tf.reduce_mean(errD_real)
+
       # gradient penalty
       epsilon = tf.random_uniform([], 0.0, 1.0)
       x_hat = real_images*epsilon + (1-epsilon)*gen_images
@@ -220,24 +223,50 @@ if __name__ == '__main__':
    epoch_num = step/(train_len/BATCH_SIZE)
    
    while epoch_num < EPOCHS:
+
       epoch_num = step/(train_len/BATCH_SIZE)
       start = time.time()
 
+
+      # train the discriminator n times
+      for critic_itr in range(n_critic):
+         idx          = np.random.choice(np.arange(train_len), BATCH_SIZE, replace=False)
+         batch_z      = np.random.normal(-1.0, 1.0, size=[BATCH_SIZE, 100]).astype(np.float32)
+         batch_y      = train_annots[idx]
+         batch_paths  = train_paths[idx]
+         batch_images = np.empty((BATCH_SIZE, SIZE, SIZE, 3), dtype=np.float32)
+         bi = 0
+         for img_p in batch_paths:
+
+            image = misc.imread(img_p)
+            if CROP: image = data_ops.crop_center(image, 212, 212)
+            image = misc.imresize(image, (SIZE, SIZE, 3))
+            image = data_ops.normalize(image)
+
+            # randomly flip images left right or up down
+            r = random.random()
+            if r < 0.5: image = np.fliplr(image)
+            r = random.random()
+            if r < 0.5: image = np.flipud(image)
+            batch_images[bi, ...] = image
+            bi += 1
+
+         sess.run(D_train_op, feed_dict={z:batch_z, y:batch_y, real_images:batch_images, mask:classes})
+
+      # train the generator once
       idx          = np.random.choice(np.arange(train_len), BATCH_SIZE, replace=False)
       batch_z      = np.random.normal(-1.0, 1.0, size=[BATCH_SIZE, 100]).astype(np.float32)
       batch_y      = train_annots[idx]
       batch_paths  = train_paths[idx]
-
       batch_images = np.empty((BATCH_SIZE, SIZE, SIZE, 3), dtype=np.float32)
-
       bi = 0
       for img_p in batch_paths:
 
          image = misc.imread(img_p)
+         if CROP: image = data_ops.crop_center(image, 212, 212)
+         
          image = misc.imresize(image, (SIZE, SIZE, 3))
          image = data_ops.normalize(image)
-
-         if CROP: image = data_ops.crop_center(image, 212, 212)
 
          # randomly flip images left right or up down
          r = random.random()
@@ -246,13 +275,9 @@ if __name__ == '__main__':
          if r < 0.5: image = np.flipud(image)
          batch_images[bi, ...] = image
          bi += 1
-
-      # train the discriminator
-      for critic_itr in range(n_critic):
-         sess.run(D_train_op, feed_dict={z:batch_z, y:batch_y, real_images:batch_images, mask:classes})
-      
-      # now get all losses and summary *without* performing a training step - for tensorboard and printing
       sess.run(G_train_op, feed_dict={z:batch_z, y:batch_y, real_images:batch_images, mask:classes})
+
+      # now get all losses and summary *without* performing a training step - for tensorboard and printing
       D_loss, G_loss, summary = sess.run([errD, errG, merged_summary_op],
                               feed_dict={z:batch_z, y:batch_y, real_images:batch_images, mask:classes})
 
