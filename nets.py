@@ -12,9 +12,8 @@ def netG(z, y, UPSAMPLE):
    z = tf.concat([z,y], axis=1)
    z = tcl.fully_connected(z, 4*4*512, activation_fn=tf.identity, weights_initializer=tf.random_normal_initializer(stddev=0.02), scope='g_z')
    z = tf.reshape(z, [-1, 4, 4, 512])
-   # their implementation has this just linear
-   #z = tcl.batch_norm(z)
-   #z = tf.nn.relu(z)
+   z = tcl.batch_norm(z)
+   z = tf.nn.relu(z)
    print 'z:',z
 
    if UPSAMPLE == 'transpose':

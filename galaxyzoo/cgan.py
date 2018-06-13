@@ -222,7 +222,7 @@ if __name__ == '__main__':
    
    epoch_num = step/(train_len/BATCH_SIZE)
    
-   while epoch_num < EPOCHS:
+   while epoch_num < EPOCHS+1:
 
       epoch_num = step/(train_len/BATCH_SIZE)
       start = time.time()
