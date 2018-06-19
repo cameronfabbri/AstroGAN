@@ -19,8 +19,9 @@ then interpolating between the two. Then, simply pick another set of random vect
 again, and so on. Here, [Gaussian interpolation](https://arxiv.org/abs/1609.04468) was used as
 opposed to linear interpolation.
 
-#### With Cropping
-<img src="https://raw.githubusercontent.com/cameronfabbri/AstroGAN/master/galaxyzoo/oDWfTXG.gif" width="224" height="224" />
+| With Cropping | Without Cropping |
+|---------------|:----------------:|
+|<img src="https://raw.githubusercontent.com/cameronfabbri/AstroGAN/master/galaxyzoo/oDWfTXG.gif" width="224" height="224" />|
 
 
 #### Without Cropping
