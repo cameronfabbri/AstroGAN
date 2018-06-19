@@ -20,7 +20,7 @@ again, and so on. Here, [Gaussian interpolation](https://arxiv.org/abs/1609.0446
 opposed to linear interpolation.
 
 #### With Cropping
-<img src="https://i.imgur.com/oDWfTXG.gif" width="256" height="256" />
+<img src="https://raw.githubusercontent.com/cameronfabbri/AstroGAN/master/galaxyzoo/oDWfTXG.gif" width="256" height="256" />
 
 
 #### Without Cropping
