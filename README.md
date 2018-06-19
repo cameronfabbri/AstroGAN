@@ -24,5 +24,5 @@ opposed to linear interpolation.
 
 
 #### Without Cropping
-<img src="https://i.imgur.com/oDiRaZc.gif" width="256" height="256" />
+<img src="https://raw.githubusercontent.com/cameronfabbri/AstroGAN/master/galaxyzoo/oDiRaZc.gif" width="256" height="256" />
 
