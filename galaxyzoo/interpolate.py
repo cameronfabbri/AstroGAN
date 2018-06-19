@@ -19,6 +19,7 @@ import time
 import sys
 import cv2
 import os
+from scipy.stats import norm
 
 sys.path.insert(0, '../ops/')
 sys.path.insert(0, '../')
@@ -27,25 +28,47 @@ from tf_ops import *
 import data_ops
 from nets import *
 
+'''
+   Spherical interpolation. val has a range of 0 to 1.
+   https://github.com/dribnet/plat/blob/master/plat/interpolate.py
+'''
+def slerp(val, low, high):
+   if val <= 0.0:
+       return low
+   elif val >= 1.0:
+       return high
+   elif np.allclose(low, high):
+       return low
+   omega = np.arccos(np.dot(low/np.linalg.norm(low), high/np.linalg.norm(high)))
+   so = np.sin(omega)
+   return np.sin((1.0-val)*omega) / so * low + np.sin(val*omega)/so * high
+
+'''
+   Linear interpolation
+'''
+def lerp(val, low, high):
+   return low + (high - low) * val
 
 if __name__ == '__main__':
 
-   parser = argparse.ArgumentParser()
-   parser.add_argument('--CHECKPOINT_DIR', required=True,help='checkpoint directory',type=str)
-   parser.add_argument('--OUTPUT_DIR',     required=False,help='Directory to save data', type=str,default='./')
-   parser.add_argument('--DATA_DIR',       required=True,help='Directory with data', type=str,default='./')
-   parser.add_argument('--DATASET',        required=False,help='Dataset to use', type=str,default='zoo')
-   parser.add_argument('--SIZE',           required=False,help='Size of images', type=int,default=64)
-   parser.add_argument('--NUM',            required=False,help='Maximum images to interpolate',  type=int,default=9)
-   a = parser.parse_args()
+   if len(sys.argv) < 3:
+      print 'Usage: python generate_test_galaxies.py [pkl file] [output directory] [max gen]'
+      exit()
+   
+   pkl_file = open(sys.argv[1], 'rb')
+   a = pickle.load(pkl_file)
+  
+   OUTPUT_DIR = sys.argv[2]
+   MAX_GEN    = int(sys.argv[3])
 
-   CHECKPOINT_DIR = a.CHECKPOINT_DIR
-   OUTPUT_DIR     = a.OUTPUT_DIR
-   DATA_DIR       = a.DATA_DIR
-   DATASET        = a.DATASET
-   NUM            = a.NUM
-   BATCH_SIZE     = NUM
-   SIZE           = a.SIZE
+   CHECKPOINT_DIR = a['CHECKPOINT_DIR']
+   DATA_DIR       = a['DATA_DIR']
+   CLASSES        = a['CLASSES']
+   UPSAMPLE       = a['UPSAMPLE']
+   SIZE           = a['SIZE']
+   CROP           = a['CROP']
+   BATCH_SIZE     = MAX_GEN
+   NUM = MAX_GEN
 
    try: os.makedirs(OUTPUT_DIR)
    except: pass
@@ -53,12 +76,10 @@ if __name__ == '__main__':
    # placeholders for data going into the network
    global_step = tf.Variable(0, name='global_step', trainable=False)
    z           = tf.placeholder(tf.float32, shape=(BATCH_SIZE, 100), name='z')
-   if DATASET == 'zoo': y_dim = 37
-   if DATASET == 'efigi': y_dim = 4
-   y           = tf.placeholder(tf.float32, shape=(BATCH_SIZE, y_dim), name='y')
+   y           = tf.placeholder(tf.float32, shape=(BATCH_SIZE, 37), name='y')
 
    # generated images
-   gen_images = netG(z, y, BATCH_SIZE, SIZE)
+   gen_images = netG(z, y, UPSAMPLE)
    
    saver = tf.train.Saver(max_to_keep=1)
    init = tf.group(tf.global_variables_initializer(), tf.local_variables_initializer())
@@ -78,7 +99,7 @@ if __name__ == '__main__':
          exit()
    
    print 'Loading data...'
-   train_images, train_annots, train_ids, test_images, test_annots, test_ids = data_ops.load_zoo(DATA_DIR, SIZE)
+   train_images, train_annots, train_ids, test_images, test_annots, test_ids = data_ops.load_zoo(DATA_DIR, 64)
 
    test_len = len(test_ids)
 
@@ -95,25 +116,48 @@ if __name__ == '__main__':
 
    alpha = np.linspace(0,1, num=NUM)
    latent_vectors = []
+   lin_vectors    = []
    x1 = two_z[0]
    x2 = two_z[1]
 
+   # interpolate between x1 and x2 using both linear interpolation and also along the great circle
    for a in alpha:
-      vector = x1*(1-a) + x2*a
+      vector = slerp(a, x1, x2)
       latent_vectors.append(vector)
 
+      lin_vector = lerp(a, x1, x2)
+      lin_vectors.append(lin_vector)
+
+      '''
+      lin_vector = x1*(1-a) + x2*a
+      lin_vectors.append(lin_vector)
+      '''
+
    latent_vectors = np.asarray(latent_vectors)
+   lin_vectors    = np.asarray(lin_vectors)
 
    gen_imgs = sess.run([gen_images], feed_dict={z:latent_vectors, y:batch_y})[0]
-   canvas   = 255*np.ones((80, 64*(NUM+1), 3), dtype=np.uint8)
-   start_x  = 10
-   start_y  = 10
+   canvas   = 255*np.ones((75, 64*(NUM+2), 3), dtype=np.uint8)
+   start_x  = 6
+   start_y  = 6
    end_y    = start_y+64
-
    for img in gen_imgs:
       img = (img+1.)/2. # these two lines properly scale from [-1, 1] to [0, 255]
       img *= 255.0/img.max()
       end_x = start_x+64
       canvas[start_y:end_y, start_x:end_x, :] = img
       start_x += 64+10
-   misc.imsave(OUTPUT_DIR+'interpolate.png', canvas)
+   misc.imsave(OUTPUT_DIR+'gaus_interpolate.png', canvas)
+   
+   lin_gen_imgs = sess.run([gen_images], feed_dict={z:lin_vectors, y:batch_y})[0]
+   canvas   = 255*np.ones((75, 64*(NUM+2), 3), dtype=np.uint8)
+   start_x  = 6
+   start_y  = 6
+   end_y    = start_y+64
+   for img in lin_gen_imgs:
+      img = (img+1.)/2. # these two lines properly scale from [-1, 1] to [0, 255]
+      img *= 255.0/img.max()
+      end_x = start_x+64
+      canvas[start_y:end_y, start_x:end_x, :] = img
+      start_x += 64+10
+   misc.imsave(OUTPUT_DIR+'lin_interpolate.png', canvas)

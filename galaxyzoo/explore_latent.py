@@ -70,7 +70,7 @@ if __name__ == '__main__':
    BATCH_SIZE = 1
 
    # play around with this to see what looks smooth
-   NUM=20
+   NUM=15
 
    # placeholders for data going into the network
    global_step = tf.Variable(0, name='global_step', trainable=False)
@@ -111,7 +111,6 @@ if __name__ == '__main__':
 
    idx     = np.random.choice(np.arange(test_len), 2, replace=False)
    batch_y = test_annots[idx]
-   #batch_y[:NUM+1] = batch_y[1] # gotta make sure they have the same attributes
 
    # the two z vectors to interpolate between
    two_z = np.random.normal(-1.0, 1.0, size=[2, 100]).astype(np.float32)
@@ -149,6 +148,9 @@ if __name__ == '__main__':
          latent_vectors.append(vector)
          latent_attributes.append(vector_a)
 
+      latent_vectors = latent_vectors[:-1]
+      latent_attributes = latent_attributes[:-1]
+
    latent_vectors = np.asarray(latent_vectors)
    latent_attributes = np.asarray(latent_attributes)
 
@@ -164,5 +166,5 @@ if __name__ == '__main__':
       gen_img = misc.imresize(gen_img, (128,128))
       gif_images.append(gen_img)
       ccc += 1
-   print '\nSaving out gif...\n')
+   print '\nSaving out gif...\n'
    imageio.mimsave('interpolation.gif', gif_images)

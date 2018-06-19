@@ -71,6 +71,7 @@ if __name__ == '__main__':
 
    # store all this information in a pickle file
    info_dict = {}
+   info_dict['HOT']            = HOT
    info_dict['GAN']            = GAN
    info_dict['SIZE']           = SIZE
    info_dict['CROP']           = CROP
