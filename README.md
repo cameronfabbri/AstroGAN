@@ -22,8 +22,5 @@ opposed to linear interpolation.
 | With Cropping | Without Cropping |
 |---------------|:----------------:|
 |<img src="https://raw.githubusercontent.com/cameronfabbri/AstroGAN/master/galaxyzoo/oDWfTXG.gif" width="224" height="224" />|
-
-
-#### Without Cropping
-<img src="https://raw.githubusercontent.com/cameronfabbri/AstroGAN/master/galaxyzoo/oDiRaZc.gif" width="224" height="224" />
+|<img src="https://raw.githubusercontent.com/cameronfabbri/AstroGAN/master/galaxyzoo/oDiRaZc.gif" width="224" height="224" />|
 
