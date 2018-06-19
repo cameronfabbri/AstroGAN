@@ -11,3 +11,18 @@ Each row corresponds to the same morphological feature.
 
 ### EFIGI
 ![efigi](https://i.imgur.com/nEWQDpO.png)
+
+
+### Latent Space Interpolation
+We can explore the latent space by picking two random z vectors and two random attributes,
+then interpolating between the two. Then, simply pick another set of random vectors and interpolate
+again, and so on. Here, [Gaussian interpolation](https://arxiv.org/abs/1609.04468) was used as
+opposed to linear interpolation.
+
+#### With Cropping
+![cropinterpolate](https://i.imgur.com/oDWfTXG.mp4)
+
+
+#### Without Cropping
+![interpolate](https://i.imgur.com/oDiRaZc.gifv)
+
