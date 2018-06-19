@@ -20,9 +20,9 @@ again, and so on. Here, [Gaussian interpolation](https://arxiv.org/abs/1609.0446
 opposed to linear interpolation.
 
 #### With Cropping
-![cropinterpolate](https://i.imgur.com/oDWfTXG.mp4)
+![cropinterpolate](https://i.imgur.com/oDWfTXG.gif)
 
 
 #### Without Cropping
-![interpolate](https://i.imgur.com/oDiRaZc.gifv)
+![interpolate](https://i.imgur.com/oDiRaZc.gif)
 
